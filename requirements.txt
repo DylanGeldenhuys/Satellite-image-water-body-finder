@@ -1,5 +1,6 @@
 jupyter
-cv2
+opencv-python
 numpy
 matplotlib
 scipy
+rasterio
