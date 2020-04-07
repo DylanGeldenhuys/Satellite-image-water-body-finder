@@ -1,11 +1,12 @@
 import numpy as np
 from pathlib import Path
 from water_body_finder.utilities import reduce_noise, get_boundary, order_edge_points
+from tests import MAEi, MAEj
 
 filename = ""
 prediction_dir = Path("")
 label_dir = Path("")
-output_dir = ""
+output_dir = Path("")
 data_resolution = 3
 data_padding = 9
 
@@ -29,3 +30,10 @@ transformed_label = label[padding:-padding, padding:-padding]
 prediction_boundary = get_boundary(transformed_prediction)
 label_boundary = get_boundary(transformed_label)
 
+np.save(output_dir.joinpath(
+    "{}_prediction_boundary.npy".format(filename)), prediction_boundary)
+np.save(output_dir.joinpath(
+    "{}_label_boundary.npy".format(filename)), label_boundary)
+
+print("MAEi: {}".format(MAEi(prediction_boundary, label_boundary)))
+print("MAEj:{}".format(MAEj(label_boundary, prediction_boundary)))
