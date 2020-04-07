@@ -12,7 +12,7 @@ import functools
 training_set_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_3")
 output_dir = Path("D:/WaterBodyExtraction/WaterPolyData/rfc")
-rfc_name = "rfc_3_b"
+rfc_name = "rfc_3_c"
 
 batch_size = 10
 rfc_index = 0
@@ -37,7 +37,7 @@ for i in range(num_iterations):
         full_training_set = full_training_set.append(training_set)
         print("{} loaded...".format(filename))
 
-    X = full_training_set.drop('label', axis=1).drop('entropy_b', axis=1)
+    X = full_training_set.drop('label', axis=1).drop('entropy_a', axis=1)
     y = list(map(int, full_training_set['label']))
 
     X_train, X_test, y_train, y_test = train_test_split(
