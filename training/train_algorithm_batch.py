@@ -12,15 +12,16 @@ import functools
 training_set_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_3")
 output_dir = Path("D:/WaterBodyExtraction/WaterPolyData/rfc")
-rfc_name = "rfc_3"
+rfc_name = "rfc_3_b"
 
 batch_size = 10
-rfc_index = 1
-num_iterations = 1
+rfc_index = 0
+num_iterations = 2
 
-f = open(output_dir.joinpath("rfc_3_0.p"), 'rb')
-rfc = pickle.load(f)
-rfc.n_estimators += 1
+rfc = None
+#f = open(output_dir.joinpath("rfc_3_0.p"), 'rb')
+#rfc = pickle.load(f)
+#rfc.n_estimators += 1
 
 if rfc == None:
     print("No rfc found, creating new rfc...")
@@ -36,7 +37,7 @@ for i in range(num_iterations):
         full_training_set = full_training_set.append(training_set)
         print("{} loaded...".format(filename))
 
-    X = full_training_set.drop('label', axis=1)
+    X = full_training_set.drop('label', axis=1).drop('entropy_b', axis=1)
     y = list(map(int, full_training_set['label']))
 
     X_train, X_test, y_train, y_test = train_test_split(
