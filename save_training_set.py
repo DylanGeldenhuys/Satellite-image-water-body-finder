@@ -12,7 +12,7 @@ import numpy as np
 
 
 # must be odd number
-data_resolution = 5
+data_resolution = 3
 
 # size of largest window used in feature extraction, must be odd number
 data_padding = 15
@@ -22,21 +22,13 @@ image_data_directory = Path(
 label_data_directory = Path(
     "D:/WaterBodyExtraction/WaterPolyData/label_data")
 output_directory = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_2")
-
-# define training set format
-training_set_format = {
-    'color_r': [],
-    'color_g': [],
-    'color_b': [],
-    'entropy_a': [],
-    'label': []
-}
+    "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_4")
 
 
 def extract_features(image_data, point, data_resolution, training_set):
     '''define feature extraction functions'''
-    window_a = create_window(image_data, point, 5)
+    window_a = create_window(image_data, point, 3)
+    window_b = create_window(image_data, point, 15)
 
     mean_color = extract_mean_color(window_a)
 
@@ -44,9 +36,13 @@ def extract_features(image_data, point, data_resolution, training_set):
     training_set['color_g'].append(mean_color[1])
     training_set['color_b'].append(mean_color[2])
     training_set['entropy_a'].append(extract_entropy(window_a))
+    training_set['entropy_b'].append(extract_entropy(window_b))
 
 
-for filename in os.listdir(image_data_directory)[0:50]:
+length = len(os.listdir(image_data_directory))
+percentage_complete = 1
+
+for filename in os.listdir(image_data_directory):
     # load files
     raster_image_data = rasterio.open(
         image_data_directory.joinpath(filename)).read()
@@ -65,12 +61,16 @@ for filename in os.listdir(image_data_directory)[0:50]:
 
     offset = round(data_padding/2) + 100
 
-    num_positive = 0
-    num_negative = 0
+    training_set = {
+        'color_r': [],
+        'color_g': [],
+        'color_b': [],
+        'entropy_a': [],
+        'entropy_b': [],
+        'label': []
+    }
 
-    training_set = training_set_format
-
-    percentage_tracker = 1
+    percentage_tracker = 10
 
     for j in range(height - 200):
         for i in range(width - 200):
@@ -79,27 +79,20 @@ for filename in os.listdir(image_data_directory)[0:50]:
 
             if (((j / height) * 100) > percentage_tracker):
                 print("File: {0} {1}%".format(filename, percentage_tracker))
-                percentage_tracker += 1
+                percentage_tracker += 10
 
             # extract label
             label_window = create_window(mask_data, [y, x], data_resolution)
             label = label_window.mean(axis=0).mean(axis=0) < 0.5
-
-            # if (label or (num_positive > num_negative)):
 
             # extract features
             extract_features(
                 image_data, [y, x], data_resolution, training_set)
             training_set['label'].append(label)
 
-            # keep track of positive to negative ratios in training data
-            # if (label):
-            #    num_positive += 1
-            # else:
-            #    num_negative += 1
-
-    print("File: {0} completed".format(filename))
-    print("\n")
+    print('\n')
+    print("{}% total completed".format((percentage_complete / length * 100)))
+    percentage_complete += 1
 
     # save to csv
     training_set_df = pd.DataFrame(training_set)

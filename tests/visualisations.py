@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 prediction_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_1")
+    "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_3")
 label_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/label_data")
 
 filename = "2531DA03"
 
-result = np.load(prediction_dir.joinpath(filename + '.npy'))
+result = np.load(prediction_dir.joinpath(filename + '_1.npy'))
 label = np.load(Path(label_dir.joinpath(filename + '.npy')))
 
 fig = plt.figure()
