@@ -4,3 +4,6 @@ numpy
 matplotlib
 scipy
 rasterio
+pandas
+scikit-image
+Pillow
