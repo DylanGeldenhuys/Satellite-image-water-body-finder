@@ -7,7 +7,7 @@ def reduce_noise(arr, inner_threshold, outer_threshold):
     # reduce inner noise
     result = np.copy(arr)
     result = np.logical_not(result).astype(int)
-    labeled_array = label(result)
+    labeled_array, num = label(result)
     binc = np.bincount(labeled_array.ravel())
     noise_idx = np.where(binc <= inner_threshold)
     shp = result.shape
@@ -16,7 +16,7 @@ def reduce_noise(arr, inner_threshold, outer_threshold):
     result = np.logical_not(result).astype(int)
 
     # reduce outer noise
-    labeled_array = label(result)
+    labeled_array, num = label(result)
     binc = np.bincount(labeled_array.ravel())
     noise_idx = np.where(binc <= outer_threshold)
     shp = result.shape

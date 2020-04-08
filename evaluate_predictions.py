@@ -1,21 +1,28 @@
 import numpy as np
 from pathlib import Path
-from water_body_finder.utilities import reduce_noise, get_boundary, order_edge_points
+from water_body_finder.utilities import reduce_noise, get_boundary, order_edge_points, smooth
 from tests import MAEi, MAEj
+import matplotlib.pyplot as plt
 
-filename = ""
-prediction_dir = Path("")
-label_dir = Path("")
-output_dir = Path("")
+filename = "2531DA03"
+prediction_dir = Path(
+    "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_3")
+label_dir = Path(
+    "D:/WaterBodyExtraction/WaterPolyData/label_data")
+output_dir = Path(
+    "D:/WaterBodyExtraction/WaterPolyData/evaluations")
 data_resolution = 3
 data_padding = 9
 
-
+print("Loading prediction...")
 # load prediction
 prediction = np.load(prediction_dir.joinpath(filename + '.npy'))
+print("Reducing noise...")
 # reduce noise
 prediction = reduce_noise(prediction, 500, 200)
+prediction = smooth(prediction)
 
+print("Loading label...")
 # load label mask
 label = np.load(label_dir.joinpath(filename + '.npy'))
 
@@ -27,13 +34,25 @@ padding = int(9/2)
 transformed_label = label[padding:-padding, padding:-padding]
 
 # get boundaries
-prediction_boundary = get_boundary(transformed_prediction)
-label_boundary = get_boundary(transformed_label)
+print("Calculating prediction boundary...")
+prediction_boundary, prediction_visual_boundary = get_boundary(
+    transformed_prediction)
+print("Calculating label boundary...")
+label_boundary, label_visual_boundary = get_boundary(transformed_label)
 
+print("Saving...")
 np.save(output_dir.joinpath(
-    "{}_prediction_boundary.npy".format(filename)), prediction_boundary)
+    "{}_prediction_boundary_b.npy".format(filename)), prediction_boundary)
 np.save(output_dir.joinpath(
-    "{}_label_boundary.npy".format(filename)), label_boundary)
+    "{}_label_boundary_b.npy".format(filename)), label_boundary)
 
+print("Evaluating...")
 print("MAEi: {}".format(MAEi(prediction_boundary, label_boundary)))
 print("MAEj:{}".format(MAEj(label_boundary, prediction_boundary)))
+
+fig = plt.figure()
+fig.add_subplot(1, 2, 1)
+plt.imshow(label_visual_boundary)
+fig.add_subplot(1, 2, 2)
+plt.imshow(prediction_visual_boundary)
+plt.show()

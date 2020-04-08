@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def order_edge_points(complex_points):
     complex_points_ls = list(complex_points)
     ordered_list = [[]]
@@ -33,12 +36,15 @@ def order_edge_points(complex_points):
 def get_boundary(mask):
     edges = []
 
-    height = mask.shape[0]
-    width = mask.shape[1]
+    height = mask.shape[0] - 1
+    width = mask.shape[1] - 1
 
-    for j in range(height):
-        for i in range(width):
+    visual = np.zeros([height + 1, width + 1])
+
+    for j in range(1, height):
+        for i in range(1, width):
             if (mask[j, i] == 0):
                 if (mask[j, i + 1] == 1 or mask[j, i - 1] == 1 or mask[j + 1, i] == 1 or mask[j - 1, i] == 1):
                     edges.append([j, i])
-    return(edges)
+                    visual[j, i] = 1
+    return(edges, visual)

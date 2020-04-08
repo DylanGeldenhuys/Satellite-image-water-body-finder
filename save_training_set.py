@@ -39,10 +39,10 @@ def extract_features(image_data, point, data_resolution, training_set):
     training_set['entropy_b'].append(extract_entropy(window_b))
 
 
-length = len(os.listdir(image_data_directory)[5:])
+length = len(os.listdir(image_data_directory)[16:])
 percentage_complete = 1
 
-for filename in os.listdir(image_data_directory)[5:]:
+for filename in os.listdir(image_data_directory)[16:]:
     # load files
     raster_image_data = rasterio.open(
         image_data_directory.joinpath(filename)).read()
