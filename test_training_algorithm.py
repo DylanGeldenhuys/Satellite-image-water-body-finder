@@ -9,9 +9,9 @@ import numpy as np
 image_data_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/image_data")
 output_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_3")
+    "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_4")
 rfc_src = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/rfc/rfc_3_1.p")
+    "D:/WaterBodyExtraction/WaterPolyData/rfc/rfc_4_1.p")
 
 filename = "2531DA03"
 
@@ -23,4 +23,4 @@ f = open(rfc_src, 'rb')
 rfc = pickle.load(f)
 
 result = find_waterbody_mask(image_data, rfc, extract_features_v3)
-np.save(output_dir.joinpath(output_dir.joinpath(filename + '_1.npy')), result)
+np.save(output_dir.joinpath(output_dir.joinpath(filename + '.npy')), result)

@@ -14,45 +14,55 @@ output_dir = Path(
 data_resolution = 3
 data_padding = 9
 
-print("Loading prediction...")
-# load prediction
-prediction = np.load(prediction_dir.joinpath(filename + '.npy'))
-print("Reducing noise...")
-# reduce noise
-prediction = reduce_noise(prediction, 500, 200)
-prediction = smooth(prediction)
+load_boundaries = True
 
-print("Loading label...")
-# load label mask
-label = np.load(label_dir.joinpath(filename + '.npy'))
+if (load_boundaries):
+    prediction_boundary = np.load(output_dir.joinpath(
+        "{}_prediction_boundary_b.npy".format(filename)))
+    label_boundary = np.load(output_dir.joinpath(
+        "{}_label_boundary_b.npy".format(filename)))
 
-# transform label and prediction to match dimensions
-transformed_prediction = np.repeat(
-    np.repeat(prediction, data_resolution, axis=0), data_resolution, axis=1)
+if (load_boundaries == False):
+    print("Loading prediction...")
+    # load prediction
+    prediction = np.load(prediction_dir.joinpath(filename + '.npy'))
+    print("Reducing noise...")
+    # reduce noise
+    prediction = reduce_noise(prediction, 500, 200)
+    prediction = smooth(prediction)
 
-padding = int(9/2)
-transformed_label = label[padding:-padding, padding:-padding]
+    print("Loading label...")
+    # load label mask
+    label = np.load(label_dir.joinpath(filename + '.npy'))
 
-# get boundaries
-print("Calculating prediction boundary...")
-prediction_boundary, prediction_visual_boundary = get_boundary(
-    transformed_prediction)
-print("Calculating label boundary...")
-label_boundary, label_visual_boundary = get_boundary(transformed_label)
+    # transform label and prediction to match dimensions
+    transformed_prediction = np.repeat(
+        np.repeat(prediction, data_resolution, axis=0), data_resolution, axis=1)
 
-print("Saving...")
-np.save(output_dir.joinpath(
-    "{}_prediction_boundary_b.npy".format(filename)), prediction_boundary)
-np.save(output_dir.joinpath(
-    "{}_label_boundary_b.npy".format(filename)), label_boundary)
+    padding = int(9/2)
+    transformed_label = label[padding:-padding, padding:-padding]
+
+    # get boundaries
+    print("Calculating prediction boundary...")
+    prediction_boundary = get_boundary(
+        transformed_prediction)
+    print("Calculating label boundary...")
+    label_boundary = get_boundary(transformed_label)
+
+    print("Saving...")
+    np.save(output_dir.joinpath(
+        "{}_prediction_boundary_b.npy".format(filename)), prediction_boundary)
+    np.save(output_dir.joinpath(
+        "{}_label_boundary_b.npy".format(filename)), label_boundary)
+
+maei = MAEi(prediction_boundary, label_boundary)
+maeij = MAEj(label_boundary, prediction_boundary)
 
 print("Evaluating...")
-print("MAEi: {}".format(MAEi(prediction_boundary, label_boundary)))
-print("MAEj:{}".format(MAEj(label_boundary, prediction_boundary)))
+print("MAEi: {0}".format(maei))
+print("MAEj:{0}".format(maeij))
 
-fig = plt.figure()
-fig.add_subplot(1, 2, 1)
-plt.imshow(label_visual_boundary)
-fig.add_subplot(1, 2, 2)
-plt.imshow(prediction_visual_boundary)
+plt.gca().invert_yaxis()
+plt.scatter(prediction_boundary[:, 0], prediction_boundary[:, 1])
+plt.scatter(label_boundary[:, 0], label_boundary[:, 1])
 plt.show()

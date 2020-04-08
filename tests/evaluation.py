@@ -10,7 +10,7 @@ def MAEi(extracted_boundary, reference_boundary):
     nbrs = NearestNeighbors(
         n_neighbors=1, algorithm='ball_tree').fit(extracted_boundary)
     distances = nbrs.kneighbors(reference_boundary)
-    return(np.average(distances))
+    return(np.average(distances[0]))
 
 
 def MAEj(reference_boundary, extracted_boundary):
@@ -20,12 +20,4 @@ def MAEj(reference_boundary, extracted_boundary):
     nbrs = NearestNeighbors(
         n_neighbors=1, algorithm='ball_tree').fit(reference_boundary)
     distances = nbrs.kneighbors(extracted_boundary)
-    return(np.average(distances))
-
-# calculates the MAEi and MAEj for a pair of mask images (refrence and predicted)
-
-
-def eval_forImage(reference_image, extracted_image):
-    reference_boundary = get_boundary(reference_image)
-    extracted_boundary = get_boundary(extracted_image)
-    return('MAEi:{}'.format(MAEi(extracted_boundary, reference_boundary)), 'MAEj:{}'.format(MAEj(reference_boundary, extracted_boundary)))
+    return(np.average(distances[0]))

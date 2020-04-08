@@ -10,18 +10,17 @@ import functools
 
 
 training_set_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_3")
+    "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_4")
 output_dir = Path("D:/WaterBodyExtraction/WaterPolyData/rfc")
-rfc_name = "rfc_3_c"
+rfc_name = "rfc_4"
 
 batch_size = 10
-rfc_index = 0
-num_iterations = 2
+rfc_index = 2
+num_iterations = 1
 
-rfc = None
-#f = open(output_dir.joinpath("rfc_3_0.p"), 'rb')
-#rfc = pickle.load(f)
-#rfc.n_estimators += 1
+#rfc = None
+f = open(output_dir.joinpath("rfc_4_1.p"), 'rb')
+rfc = pickle.load(f)
 
 if rfc == None:
     print("No rfc found, creating new rfc...")
@@ -37,7 +36,7 @@ for i in range(num_iterations):
         full_training_set = full_training_set.append(training_set)
         print("{} loaded...".format(filename))
 
-    X = full_training_set.drop('label', axis=1).drop('entropy_a', axis=1)
+    X = full_training_set.drop('label', axis=1)
     y = list(map(int, full_training_set['label']))
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -52,7 +51,6 @@ for i in range(num_iterations):
     print("Pickling forest...")
     pickle.dump(rfc, open(output_dir.joinpath(
         rfc_name + "_{}.p".format(rfc_index)), "wb"))
-    rfc_index += 1
 
     print('\n')
     print("Predicting...")
@@ -62,3 +60,11 @@ for i in range(num_iterations):
     print("=== Classification Report ===")
     print(classification_report(y_test, rfc_predict))
     print('\n')
+
+    text_file = open(output_dir.joinpath(
+        "{0}_{1}_classifiction_report.txt".format(rfc_name, rfc_index)), "w")
+    text_file.write("=== Classification Report ===")
+    text_file.write("\n")
+    text_file.write(str(classification_report(y_test, rfc_predict)))
+    text_file.close()
+    rfc_index += 1
