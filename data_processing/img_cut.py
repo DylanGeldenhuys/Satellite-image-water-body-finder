@@ -1,5 +1,4 @@
 
-from rasterio.plot import reshape_as_image
 import numpy as np
 
 #This function take an imagae and iserts a green block in the area specified by two coordinates, top left and bottom right. eg [[10,10],[50,50]]
