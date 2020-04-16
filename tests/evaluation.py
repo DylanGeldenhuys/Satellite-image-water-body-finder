@@ -1,4 +1,4 @@
-gfrom sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import NearestNeighbors
 import numpy as np
 
 
