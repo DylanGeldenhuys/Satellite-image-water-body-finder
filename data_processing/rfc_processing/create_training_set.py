@@ -23,7 +23,7 @@ image_label_fix_src = Path(
     "")
 
 # load image label fix
-pd.read_csv(image_label_fix_src)
+image_label_fix_data = pd.read_csv(image_label_fix_src)
 
 # loop through images
 for filename in os.listdir(image_data_directory):
@@ -32,5 +32,5 @@ for filename in os.listdir(image_data_directory):
         image_data_directory.joinpath(filename)).read()
     image_data = reshape_as_image(raster_image_data)
 
-    mask_data = np.load(label_data_directory.joinpath(
+    label_data = np.load(label_data_directory.joinpath(
         filename.replace("tif", "npy")))
