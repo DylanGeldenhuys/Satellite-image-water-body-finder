@@ -1,9 +1,0 @@
-jupyter
-opencv-python
-numpy
-matplotlib
-scipy
-rasterio
-pandas
-scikit-image
-Pillow
