@@ -6,12 +6,12 @@ import numpy as np
 from pathlib import Path
 import os
 
-geo_data_directory = Path("/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/geojsons")
-image_data_directory = Path("/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/tifs")
+geo_data_directory = Path("D:/WaterBodyExtraction/WaterPolyData/geo_data")
+image_data_directory = Path("D:/WaterBodyExtraction/WaterPolyData/image_data")
 
-output_directory = Path("/media/ds/New Volume/Waterbody_Project/comp_label")
+output_directory = Path("D:/WaterBodyExtraction/WaterPolyData/label_data")
 
-for filename in os.listdir(geo_data_directory):#[85:]:
+for filename in os.listdir(geo_data_directory)[85:]:
     # load files
     with open(geo_data_directory.joinpath(filename)) as f:
         geo_data = json.load(f)
