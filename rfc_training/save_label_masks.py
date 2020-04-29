@@ -6,12 +6,12 @@ import numpy as np
 from pathlib import Path
 import os
 
-geo_data_directory = Path("/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/geojsons")
+geo_data_directory = Path("/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/Polylines")
 image_data_directory = Path("/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/tifs")
 
-output_directory = Path("/media/ds/New Volume/Waterbody_Project/comp_label")
+output_directory = Path("/media/ds/New Volume/Waterbody_Project/new_labels")
 
-for filename in os.listdir(geo_data_directory):#[85:]:
+for filename in os.listdir(geo_data_directory):
     # load files
     with open(geo_data_directory.joinpath(filename)) as f:
         geo_data = json.load(f)
@@ -23,8 +23,7 @@ for filename in os.listdir(geo_data_directory):#[85:]:
     shapes = []
     for feature in geo_data['features']:
         shapes.append(geometry.Polygon(
-            [[p[0], p[1]] for p in feature['geometry']['coordinates']]))
-
+            [[p[0], p[1]] for p in feature['geometry']['coordinates'][0]]))
     # create mask from shapes
     mask = rasterio.mask.raster_geometry_mask(image_data, shapes)[0]
 
