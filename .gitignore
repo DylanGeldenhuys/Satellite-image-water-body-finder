@@ -1,9 +1,12 @@
 env/
 playground/
-env_waterbody/
+waterbody_env/
 .vscode/
 data/
 .vs/
 wheels/
 temp/
 work_dir/
+water_body_finder/feature_extraction/__pycache__/
+water_body_finder/utilities/__pycache__/
+water_body_finder/__pycache__/

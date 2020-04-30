@@ -12,9 +12,9 @@ import os
 image_data_directory = Path(
     "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/tifs")
 label_data_directory = Path(
-    "/media/ds/New Volume/Waterbody_Project/comp_label")
+    "/media/ds/New Volume/Waterbody_Project/new_labels")
 
-filename = '2931AC10.tif' #os.listdir(image_data_directory)[4]
+filename = '2628BB01.tif' #os.listdir(image_data_directory)[4]
 
 # load files
 raster_image_data = rasterio.open(
@@ -27,7 +27,7 @@ label_data = np.load(label_data_directory.joinpath(
 label_data_alpha = np.zeros(
     (label_data.shape[0], label_data.shape[1], 4), dtype=np.uint8)
 
-label_data_alpha[label_data == 0] = [255, 17, 0, 50]
+label_data_alpha[label_data == 0] = [255, 17, 0, 30]
 
 label_data_alpha[label_data == 1] = [0, 0, 0, 0]
 Image.fromarray(label_data_alpha)
