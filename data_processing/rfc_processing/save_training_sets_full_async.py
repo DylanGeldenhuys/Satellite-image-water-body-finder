@@ -15,17 +15,16 @@ if __name__ == '__main__':  # noqa
     geo_data_directory = Path(
         "D:/WaterBodyExtraction/WaterPolyData/geo_data/v2")
     label_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/label_data")
+        "D:/WaterBodyExtraction/WaterPolyData/label_data/v2")
 
     training_output_directory = Path(
         "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_8")
     visualisation_output_directory = Path(
         "D:/WaterBodyExtraction/WaterPolyData/visualisations/training_set_8")
 
-    pool = mp.Pool(mp.cpu_count())
+    pool = mp.Pool(1)
 
     filenames = os.listdir(geo_data_directory)
-    print(len(filenames))
 
     results = []
     length = len(filenames)
@@ -37,7 +36,7 @@ if __name__ == '__main__':  # noqa
 
     for filename in filenames:
         pool.apply_async(create_training_set, args=(
-            filename.replace(".tif", ""), image_data_directory, label_data_directory, training_output_directory, visualisation_output_directory), callback=collect_result)
+            filename.replace(".geojson", ""), image_data_directory, label_data_directory, training_output_directory, visualisation_output_directory), callback=collect_result)
 
     pool.close()
     pool.join()
