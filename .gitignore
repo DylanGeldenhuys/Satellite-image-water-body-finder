@@ -7,6 +7,21 @@ data/
 wheels/
 temp/
 work_dir/
+<<<<<<< HEAD
 water_body_finder/feature_extraction/__pycache__/
 water_body_finder/utilities/__pycache__/
 water_body_finder/__pycache__/
+=======
+water_body_finder/__pycache__/__init__.cpython-37.pyc
+water_body_finder/__pycache__/find_water_bodies.cpython-37.pyc
+water_body_finder/feature_extraction/__pycache__/__init__.cpython-37.pyc
+water_body_finder/feature_extraction/__pycache__/entropy.cpython-37.pyc
+water_body_finder/feature_extraction/__pycache__/mean_color.cpython-37.pyc
+.gitignore
+water_body_finder/feature_extraction/__pycache__/variance.cpython-37.pyc
+water_body_finder/utilities/__pycache__/__init__.cpython-37.pyc
+water_body_finder/utilities/__pycache__/create_window.cpython-37.pyc
+water_body_finder/utilities/__pycache__/polygon.cpython-37.pyc
+water_body_finder/utilities/__pycache__/post_processing.cpython-37.pyc
+water_body_finder/utilities/__pycache__/create_polygon.cpython-37.pyc
+>>>>>>> b3a2dbba35653f4fc440784923953452918b4ee2
