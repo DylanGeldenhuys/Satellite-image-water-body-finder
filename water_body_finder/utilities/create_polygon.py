@@ -4,20 +4,20 @@ def get_boundary(result):
     edges = []
     for j in range(result.shape[0] - 1):
         for i in range(result.shape[1] - 1):
-            if (result[j, i] < 175):
+            if (result[j, i] == True):
                 if (result[j, i] != result[j, i + 1] or result[j, i] != result[j, i - 1] or result[j, i] != result[j + 1, i] or result[j, i] != result[j - 1, i]):
                     edges.append([j,i])
     return(edges)
 
 def get_boundary2(mask):
     edges = []
-    for j in range(mask.shape[0]):
-        for i in range(mask.shape[1]):
-            if (mask[j, i] < 175):
-                if (mask[j, i + 1] > 175
-                or mask[j, i - 1] > 175
-                or mask[j + 1, i] > 175
-                or mask[j - 1, i] > 175):
+    for j in range(mask.shape[0]-1):
+        for i in range(mask.shape[1]-1):
+            if (mask[j, i] == True):
+                if (mask[j, i + 1] == False
+                or mask[j, i - 1] == False
+                or mask[j + 1, i] == False
+                or mask[j - 1, i] == False):
                     edges.append([j, i])
     return(edges)
 
