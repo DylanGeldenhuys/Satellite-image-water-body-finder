@@ -37,7 +37,3 @@ for filename in os.listdir(geo_data_directory):
     # save mask
     np.save(output_directory.joinpath(
         filename.replace("geojson", "npy")), mask)
-
-    # save visualisation
-    plt.imsave(visualisation_output_dir.joinpath("{}_label.jpg".format(
-        filename.replace(".geojson", ""))), mask, cmap=cm.gray)
