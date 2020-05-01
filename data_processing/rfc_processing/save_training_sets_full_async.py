@@ -22,7 +22,7 @@ if __name__ == '__main__':  # noqa
     visualisation_output_directory = Path(
         "D:/WaterBodyExtraction/WaterPolyData/visualisations/training_set_8")
 
-    pool = mp.Pool(1)
+    pool = mp.Pool(mp.cpu_count())
 
     filenames = os.listdir(geo_data_directory)
 
@@ -32,6 +32,9 @@ if __name__ == '__main__':  # noqa
     def collect_result(result):
         global results
         results.append(result)
+        filename, success = result
+        message = "Success" if success else "Failed"
+        print("{0}: {1}".format(filename, message))
         print("{0} files of {1} complete".format(len(results), length))
 
     for filename in filenames:
