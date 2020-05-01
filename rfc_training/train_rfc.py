@@ -29,7 +29,7 @@ print("Sampling...")
 positive_sample = full_training_set[full_training_set.label == False]
 negative_set = full_training_set[full_training_set.label == True]
 negative_sample = negative_set.sample(
-    len(positive_sample) / len(negative_set))
+    frac=(len(positive_sample) / len(negative_set)))
 
 print("{} positive samples taken".format(len(positive_sample)))
 print("{} negative samples taken".format(len(negative_sample)))
@@ -59,6 +59,10 @@ print('\n')
 print("=== Classification Report ===")
 print(classification_report(y_test, rfc_predict))
 print('\n')
+
+print("Cross validating...")
+rfc_cv_score = cross_val_score(
+    rfc, X_train, y_train, cv=5, scoring='roc_auc')
 
 text_file = open(output_dir.joinpath(
     "{0}_classifiction_report.txt".format(rfc_name)), "w")
