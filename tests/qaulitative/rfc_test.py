@@ -11,16 +11,14 @@ import matplotlib.pyplot as plt
 
 
 training_set_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_8")
-output_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_4")
+    "D:/WaterBodyExtraction/WaterPolyData/testing_sets/set_8")
 rfc_src = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/rfc/rfc_8.p")
+    "D:/WaterBodyExtraction/WaterPolyData/rfc/rfc_8_d.p")
 
 f = open(rfc_src, 'rb')
 rfc = pickle.load(f)
 
-filename = "2828BB06_6050_6050.csv"  # os.listdir(training_set_dir)[14]
+filename = "2531DA03_6050_50.csv"  # os.listdir(training_set_dir)[14]
 training_set = pd.read_csv(
     training_set_dir.joinpath(filename)).iloc[:, 1:]
 
@@ -34,17 +32,17 @@ print("=== Classification Report ===")
 print(classification_report(labels, predictions))
 print('\n')
 
-prediction_img = predictions.reshape(2000, 2000)
-label_img = np.array(labels).reshape(2000, 2000)
+prediction_img = predictions.reshape(1874, 2000)
+label_img = np.array(labels).reshape(1874, 2000)
 
 fig, (ax0, ax1) = plt.subplots(ncols=2, sharex=True, sharey=True)
 
-ax0.imshow(label_img)
-ax0.set_title("Label")
+ax0.imshow(prediction_img)
+ax0.set_title("Prediction")
 ax0.axis("off")
 
-ax1.imshow(prediction_img)
-ax1.set_title("Prediction")
+ax1.imshow(label_img)
+ax1.set_title("Label")
 ax1.axis("off")
 
 fig.tight_layout()
