@@ -67,8 +67,6 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
                     'color_g': [],
                     'color_b': [],
                     'entropy': [],
-                    # 'texture_a': [],
-                    # 'texture_b': [],
                     'color_mean_r': [],
                     'color_mean_g': [],
                     'color_mean_b': [],
@@ -110,10 +108,6 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
                         offset = int(window_size/2)
                         window = image_data[y-offset: y + offset,
                                             x-offset: x + offset]
-
-                    # texture_a, texture_b = glcm_feature(window[:, :, 0])
-                        # training_set['texture_a'].append(texture_a)
-                    # training_set['texture_b'].append(texture_b)
 
                         mean_colour = window.mean(axis=0).mean(axis=0)
                         training_set['color_mean_r'].append(

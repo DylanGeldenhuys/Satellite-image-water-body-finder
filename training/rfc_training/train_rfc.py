@@ -7,34 +7,51 @@ from sklearn.metrics import classification_report, confusion_matrix
 import pickle
 from pathlib import Path
 import functools
+import random
 
 
 training_set_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_8")
 output_dir = Path("D:/WaterBodyExtraction/WaterPolyData/rfc")
-rfc_name = "rfc_8"
+rfc_name = "rfc_8_d"
 
 rfc = RandomForestClassifier(
     n_estimators=5, min_samples_leaf=3)
 
-full_training_set = pd.DataFrame()
 print("Loading training sets...")
-for filename in os.listdir(training_set_dir):
-    training_set = pd.read_csv(
-        training_set_dir.joinpath(filename)).iloc[:, 1:]
-    full_training_set = full_training_set.append(training_set)
-    print("{} loaded...".format(filename))
+total_positive_sample = pd.DataFrame()
+total_negative_sample = pd.DataFrame()
 
-print("Sampling...")
-positive_sample = full_training_set[full_training_set.label == False]
-negative_set = full_training_set[full_training_set.label == True]
-negative_sample = negative_set.sample(
-    frac=(len(positive_sample) / len(negative_set)))
+batch_load_size = 12
+filenames = os.listdir(training_set_dir)
+random.shuffle(filenames)
 
-print("{} positive samples taken".format(len(positive_sample)))
-print("{} negative samples taken".format(len(negative_sample)))
+for i in range(0, len(filenames), batch_load_size):
+    positive_set = pd.DataFrame()
+    negative_set = pd.DataFrame()
+    for filename in filenames[i:i+batch_load_size]:
+        training_set = pd.read_csv(
+            training_set_dir.joinpath(filename)).iloc[:, 1:]
+        positive_set = positive_set.append(
+            training_set[training_set.label == False])
+        negative_set = negative_set.append(
+            training_set[training_set.label == True])
+        print("{} positive samples taken".format(len(positive_set)))
+        print("{} loaded...".format(filename))
 
-full_sample = positive_sample.append(negative_sample)
+    print("Sampling...")
+    ratio = int(len(negative_set) / (len(positive_set) * 5))
+    for i in range(ratio):
+        total_positive_sample = total_positive_sample.append(positive_set)
+    total_negative_sample = total_negative_sample.append(negative_set.sample(
+        frac=((len(positive_set) * ratio) / len(negative_set))))
+
+    print('\n')
+    print("{} positive samples taken".format(len(total_positive_sample)))
+    print("{} negative samples taken".format(len(total_negative_sample)))
+
+full_sample = total_positive_sample.append(total_negative_sample)
+full_sample = full_sample.sample(frac=1)
 
 X = full_sample.drop('label', axis=1)
 y = list(map(int, full_sample['label']))
@@ -85,4 +102,9 @@ text_file.write("=== Mean AUC Score ===")
 text_file.write('\n')
 text_file.write(
     "Mean AUC Score - Random Forest: {}".format(rfc_cv_score.mean()))
+text_file.write('\n')
+text_file.write('\n')
+text_file.write("=== Feature Importances ===")
+text_file.write(
+    "{}".format(rfc.feature_importances_))
 text_file.close()
