@@ -13,19 +13,18 @@ if __name__ == '__main__':  # noqa
     image_data_directory = Path(
         "D:/WaterBodyExtraction/WaterPolyData/image_data")
     geo_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/geo_data/v2")
+        "D:/WaterBodyExtraction/WaterPolyData/geo_data/v1")
     label_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/label_data/v2")
+        "D:/WaterBodyExtraction/WaterPolyData/label_data/v1")
 
     training_output_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_8")
+        "D:/WaterBodyExtraction/WaterPolyData/testing_sets/set_8")
     visualisation_output_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/visualisations/training_set_8")
+        "D:/WaterBodyExtraction/WaterPolyData/testing_sets/set_8/visualisations")
 
     pool = mp.Pool(mp.cpu_count())
 
-    filenames = os.listdir(geo_data_directory)
-
+    filenames = ["2531DA03"]
     results = []
     length = len(filenames)
 
