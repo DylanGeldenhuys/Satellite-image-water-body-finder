@@ -11,9 +11,9 @@ import random
 
 
 training_set_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_8")
-output_dir = Path("D:/WaterBodyExtraction/WaterPolyData/rfc")
-rfc_name = "rfc_8_d"
+    "/media/ds/New Volume/Waterbody_Project/Training_set_1")
+output_dir = Path("/media/ds/New Volume/Waterbody_Project/RFC'S")
+rfc_name = "rfc1"
 
 rfc = RandomForestClassifier(
     n_estimators=5, min_samples_leaf=3)
@@ -40,7 +40,7 @@ for i in range(0, len(filenames), batch_load_size):
         print("{} loaded...".format(filename))
 
     print("Sampling...")
-    ratio = int(len(negative_set) / (len(positive_set) * 5))
+    ratio = int(len(negative_set) / (len(positive_set) * 25))
     for i in range(ratio):
         total_positive_sample = total_positive_sample.append(positive_set)
     total_negative_sample = total_negative_sample.append(negative_set.sample(

@@ -1,7 +1,7 @@
 if __name__ == '__main__':  # noqa
 
     import sys
-    sys.path.append('C:/personal/satalite-image-water-body-finder/data_processing/rfc_processing')  # noqa
+    sys.path.append('/home/ds/Projects/satalite-image-water-body-finder/data_processing/rfc_processing')  # noqa
 
     import os
     import multiprocessing as mp
@@ -11,20 +11,20 @@ if __name__ == '__main__':  # noqa
 
     # define parameters
     image_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/image_data")
+        "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/tifs")
     geo_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/geo_data/v1")
+        "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/Polylines")
     label_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/label_data/v1")
+        "/media/ds/New Volume/Waterbody_Project/new_labels")
 
     training_output_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/testing_sets/set_8")
+        "/media/ds/New Volume/Waterbody_Project/Training_set_1")
     visualisation_output_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/testing_sets/set_8/visualisations")
+        "/media/ds/New Volume/Waterbody_Project/visual_1")
 
     pool = mp.Pool(mp.cpu_count())
 
-    filenames = ["2531DA03"]
+    filenames = os.listdir("/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/Polylines")
     results = []
     length = len(filenames)
 

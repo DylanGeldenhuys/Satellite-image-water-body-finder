@@ -7,16 +7,17 @@ from pathlib import Path
 import os
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from PIL import Image
 
 geo_data_directory = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/geo_data/v2")
+    "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/Polylines")
 image_data_directory = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/image_data")
+    "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/tifs")
 
 output_directory = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/label_data/v2")
-visualisation_output_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/visualisations/training_set_8")
+    "/media/ds/New Volume/Waterbody_Project/new_labels")
+visualisation_output_directory = Path(
+    "/media/ds/New Volume/Waterbody_Project/new_labels_vis")
 
 for filename in os.listdir(geo_data_directory):
     # load files
@@ -29,11 +30,16 @@ for filename in os.listdir(geo_data_directory):
     # extract shapes
     shapes = []
     for feature in geo_data['features']:
-        shapes.append(geometry.Polygon(
-            [[p[0], p[1]] for p in feature['geometry']['coordinates'][0]]))
+        
+        for i in range(len(feature['geometry']['coordinates'])):
+            #print(feature['geometry']['coordinates'][i])
+            shapes.append(geometry.Polygon(
+                [[p[0], p[1]] for p in feature['geometry']['coordinates'][i]]))
     # create mask from shapes
     mask = rasterio.mask.raster_geometry_mask(image_data, shapes)[0]
 
     # save mask
-    np.save(output_directory.joinpath(
-        filename.replace("geojson", "npy")), mask)
+    #np.save(output_directory.joinpath(
+    #    filename.replace("geojson", "npy")), mask)
+    Image.fromarray(mask.astype(np.uint8)).save(visualisation_output_directory.joinpath(
+                    "{}.png".format(filename[:-8])))

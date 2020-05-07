@@ -1,5 +1,5 @@
 import sys
-sys.path.append('C:/personal/satalite-image-water-body-finder')  # noqa
+sys.path.append('/home/ds/Projects/satalite-image-water-body-finder')  # noqa
 
 import os
 from pathlib import Path
@@ -16,6 +16,7 @@ from rasterio.enums import Resampling
 from skimage.util import img_as_ubyte
 from skimage.filters.rank import entropy
 from skimage.morphology import disk
+from skimage.feature import local_binary_pattern
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -34,7 +35,7 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
     try:
         outer_padding = 50
         inner_padding = 10
-        max_set_size = 6000
+        max_set_size = 2100
         window_size = 9
         data_resolution = 3
 
@@ -58,7 +59,7 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
                 # load image window
                 rasterio_image_data = dataset.read(
                     window=Window(x_origin - inner_padding, y_origin - inner_padding,
-                                  window_width + inner_padding * 2, window_height + inner_padding * 2)
+                                    window_width + inner_padding * 2, window_height + inner_padding * 2)
                 )
                 image_data = reshape_as_image(rasterio_image_data)
 
@@ -67,6 +68,7 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
                     'color_g': [],
                     'color_b': [],
                     'entropy': [],
+                    'binary_texture': [],
                     'color_mean_r': [],
                     'color_mean_g': [],
                     'color_mean_b': [],
@@ -82,6 +84,12 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
                 # entropy feature extraction (red channel)
                 entropy_feature = entropy(
                     img_as_ubyte(rgb2gray(image_data)), disk(5))
+
+                #binary texture feature extraction 
+                radius = 9
+                n_points = 12 * radius
+                METHOD = 'uniform'
+                texture_feature = local_binary_pattern(rgb2gray(image_data), n_points, radius, METHOD)
 
                 # save for visualisation purposes
                 Image.fromarray(entropy_feature * 25).convert('RGB').save(visualisation_output_directory.joinpath(
@@ -104,6 +112,9 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
 
                         # entropy feature
                         training_set['entropy'].append(entropy_feature[y][x])
+
+                        # binary texture 
+                        training_set['binary_texture'].append(texture_feature[y][x])
 
                         offset = int(window_size/2)
                         window = image_data[y-offset: y + offset,
@@ -132,16 +143,16 @@ def create_training_set(filename, image_data_directory, label_data_directory, tr
 if __name__ == '__main__':
     # define parameters
     image_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/image_data")
+        "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/tifs")
     geo_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/geo_data/v2")
+        "/media/ds/New Volume/Waterbody_Project/raw_data/WaterPolyData/Polylines")
     label_data_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/label_data/v2")
+        "/media/ds/New Volume/Waterbody_Project/new_labels")
 
     training_output_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/training_sets/training_set_8")
+        "/media/ds/New Volume/Waterbody_Project/Training_set_1")
     visualisation_output_directory = Path(
-        "D:/WaterBodyExtraction/WaterPolyData/visualisations/training_set_8")
+        "/media/ds/New Volume/Waterbody_Project/visual_1")
 
     filenames = os.listdir(geo_data_directory)
     filename = create_training_set(filenames[0].replace(".geojson", ""), image_data_directory, label_data_directory,
