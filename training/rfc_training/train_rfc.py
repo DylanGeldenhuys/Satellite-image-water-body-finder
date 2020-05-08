@@ -13,7 +13,7 @@ import random
 training_set_dir = Path(
     "/media/ds/New Volume/Waterbody_Project/Training_set_1")
 output_dir = Path("/media/ds/New Volume/Waterbody_Project/RFC'S")
-rfc_name = "rfc1"
+rfc_name = "rfc1_drop_texture"
 
 rfc = RandomForestClassifier(
     n_estimators=5, min_samples_leaf=3)
@@ -54,6 +54,7 @@ full_sample = total_positive_sample.append(total_negative_sample)
 full_sample = full_sample.sample(frac=1)
 
 X = full_sample.drop('label', axis=1)
+X = full_sample.drop('binary_texture', axis=1)
 y = list(map(int, full_sample['label']))
 
 print("Splitting training set...")
