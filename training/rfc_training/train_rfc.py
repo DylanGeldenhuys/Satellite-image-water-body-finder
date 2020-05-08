@@ -4,6 +4,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import RandomizedSearchCV
+import numpy as np
+
 import pickle
 from pathlib import Path
 import functools
@@ -13,10 +16,7 @@ import random
 training_set_dir = Path(
     "/media/ds/New Volume/Waterbody_Project/Training_set_1")
 output_dir = Path("/media/ds/New Volume/Waterbody_Project/RFC'S")
-rfc_name = "rfc1_drop_texture"
-
-rfc = RandomForestClassifier(
-    n_estimators=5, min_samples_leaf=3)
+rfc_name = "rfc_Hyperparam_tuning_text"
 
 print("Loading training sets...")
 total_positive_sample = pd.DataFrame()
@@ -54,9 +54,8 @@ full_sample = total_positive_sample.append(total_negative_sample)
 full_sample = full_sample.sample(frac=1)
 
 X = full_sample.drop('label', axis=1)
-X = X.drop('binary_texture', axis=1)
-print(X.columns)
 y = list(map(int, full_sample['label']))
+del full_sample,total_negative_sample,total_positive_sample,positive_set,negative_set
 
 print("Splitting training set...")
 X_train, X_test, y_train, y_test = train_test_split(
@@ -64,7 +63,36 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 print('\n')
 print("Training forest...")
+#rfc.fit(X_train, y_train)
+# Number of trees in random forest
+n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 100)]
+# Number of features to consider at every split
+max_features = ['auto', 'sqrt']
+# Maximum number of levels in tree
+max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+max_depth.append(None)
+# Minimum number of samples required to split a node
+min_samples_split = [2, 5, 10]
+# Minimum number of samples required at each leaf node
+min_samples_leaf = [1, 2, 4]
+# Method of selecting samples for training each tree
+bootstrap = [True, False]
+# Create the random grid
+random_grid = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf,
+               'bootstrap': bootstrap}
+# Use the random grid to search for best hyperparameters
+# First create the base model to tune
+rf = RandomForestClassifier()
+# Random search of parameters, using 3 fold cross validation, 
+# search across 100 different combinations, and use all available cores
+rfc = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)
+# Fit the random search model
 rfc.fit(X_train, y_train)
+
 
 print('\n')
 print("Pickling forest...")
