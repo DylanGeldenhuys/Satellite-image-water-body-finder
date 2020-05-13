@@ -19,3 +19,4 @@ water_body_finder/utilities/__pycache__/create_window.cpython-37.pyc
 water_body_finder/utilities/__pycache__/polygon.cpython-37.pyc
 water_body_finder/utilities/__pycache__/post_processing.cpython-37.pyc
 water_body_finder/utilities/__pycache__/create_polygon.cpython-37.pyc
+*.egg-info
