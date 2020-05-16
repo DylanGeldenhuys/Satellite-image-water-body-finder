@@ -20,15 +20,19 @@ visualisation_output_directory = Path(
     "/media/ds/New Volume/Waterbody_Project/new_labels_vis")
 
 for filename in os.listdir(geo_data_directory):
+    print(filename)
     # load files
+
     with open(geo_data_directory.joinpath(filename)) as f:
         geo_data = json.load(f)
 
     image_data = rasterio.open(
         image_data_directory.joinpath(filename.replace("geojson", "tif")))
+    
 
     # extract shapes
     shapes = []
+
     for feature in geo_data['features']:
         
         for i in range(len(feature['geometry']['coordinates'])):
@@ -39,7 +43,8 @@ for filename in os.listdir(geo_data_directory):
     mask = rasterio.mask.raster_geometry_mask(image_data, shapes)[0]
 
     # save mask
-    #np.save(output_directory.joinpath(
-    #    filename.replace("geojson", "npy")), mask)
+    np.save(output_directory.joinpath(
+        filename.replace("geojson", "npy")), mask)
+    # 
     Image.fromarray(mask.astype(np.uint8)).save(visualisation_output_directory.joinpath(
                     "{}.png".format(filename[:-8])))
