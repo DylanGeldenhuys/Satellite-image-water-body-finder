@@ -2,84 +2,118 @@ import pickle
 from pathlib import Path
 import os
 import numpy as np
+import multiprocessing as mp
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import rasterio
+from shapely.geometry import Polygon
 
 from .feature_extraction import extract_features
-from .utilities import get_boundary, order_edge_points, save_geojson
+from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching
 from .post_process import process
-import rasterio
-from rasterio.plot import reshape_as_image
-from rasterio.windows import Window
-from rasterio.enums import Resampling
 
 
-def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.path.realpath(__file__)) + '/rfc', rfc_version="0", padding=20, window_size=3000):
+def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.path.realpath(__file__)) + '/rfc', rfc_version="0", padding=600, window_size=3000, resolution=3):
     f = open(Path(rfc_dir).joinpath('rfc_{}.p'.format(rfc_version)), 'rb')
     rfc = pickle.load(f)
 
-    save_multiple_async(rfc, image_input_dir, output_dir, padding, window_size)
+    save_multiple(rfc, image_input_dir, output_dir,
+                  padding, window_size, resolution)
 
 
-def save_multiple_async(rfc, image_input_dir, output_dir, padding, window_size):
+def save_multiple(rfc, image_input_dir, output_dir, padding, window_size, resolution):
     filenames = os.listdir(image_input_dir)
 
-    for filename in filenames[5:6]:
+    for filename in filenames:
         image_src = Path(image_input_dir).joinpath(filename)
         boundary_lines = find_image_boundary_lines_async(
-            rfc, image_src, padding, window_size)
+            rfc, image_src, padding, window_size, resolution)
         geo_json_dir = Path(output_dir).joinpath("geo_data")
         geo_json_dir.mkdir(parents=True, exist_ok=True)
 
+        np.save(geo_json_dir.joinpath(
+            filename.replace('tif', 'npy')), boundary_lines)
         save_geojson(boundary_lines, image_src, geo_json_dir.joinpath(
             filename.replace('tif', 'geojson')))
 
 
-def find_image_boundary_lines_async(rfc, image_input_src, padding, window_size):
+def find_image_boundary_lines_async(rfc, image_input_src, padding, window_size, resolution):
     """"""
+    pool = mp.Pool()
+
     dataset = rasterio.open(image_input_src)
-    boundary_points = np.array([])
+
+    boundary_lines_ls = []
+
+    def update_boundary(new_boundary_points):
+        boundary_lines_ls.append(new_boundary_points)
+        print("Completed: {}".format(len(boundary_lines_ls)))
+
+    def error_callback(error):
+        print(str(error))
+
     for y in range(padding, dataset.height - padding, window_size):
         for x in range(padding, dataset.width - padding, window_size):
-            boundary_points = np.concatenate(boundary_points, find_boundary_points(
-                rfc, dataset, [y, x], window_size, padding))
-            print("Completed {}, {}".format(x, y))
+            pool.apply_async(find_boundary_lines, args=(
+                rfc, image_input_src, [y, x], window_size, padding, resolution), error_callback=error_callback, callback=update_boundary)
 
-    print("Ordering edge points...")
-    return order_edge_points(boundary_points)
+    pool.close()
+    pool.join()
+
+    boundary_lines = []
+    for line in boundary_lines_ls:
+        boundary_lines += line
+
+    return stitch_boundary_lines(boundary_lines, resolution * 10)
 
 
-def find_boundary_points(rfc, dataset, offset, window_size, padding):
+def stitch_boundary_lines(boundary_lines, resolution):
+    polygons = []
+    line_ls = boundary_lines
+    current_line = line_ls.pop(0)
+
+    while len(line_ls) > 0:
+        found = False
+        if is_touching(current_line[0], current_line[-1], resolution):
+            polygons.append(current_line)
+            current_line = line_ls.pop(0) if len(line_ls) > 0 else None
+            continue
+
+        for i in range(len(line_ls)):
+            if is_touching(current_line[-1], line_ls[i][0], resolution):
+                current_line = list(current_line) + list(line_ls.pop(i))
+                found = True
+                break
+            elif is_touching(current_line[-1], line_ls[i][-1], resolution):
+                current_line = list(current_line) + \
+                    list(reversed(line_ls.pop(i)))
+                found = True
+                break
+
+        if found == False:
+            polygons.append(current_line)
+            current_line = line_ls.pop(0) if len(line_ls) > 0 else None
+
+    return [list(polygon) + [polygon[0]] for polygon in polygons]
+
+
+def find_boundary_lines(rfc, image_input_src, offset, window_size, padding, resolution):
     """"""
+    dataset = rasterio.open(image_input_src)
     image_data = load_window(dataset, offset, window_size, padding)
-    features = extract_features(image_data, padding)
+    features = extract_features(image_data, resolution)
 
     prediction = rfc.predict(features)
-    prediction_img = prediction.reshape(
-        image_data.shape[0] - padding * 2, image_data.shape[1] - padding * 2)
+    height, width, channels = image_data[::resolution, ::resolution, :].shape
+    prediction_img = prediction.reshape(height, width)
     processed_prediction = process(prediction_img)
-    boundary_points = get_boundary(processed_prediction)
 
-    return correct_point_offset(boundary_points, offset)
+    boundary_points = get_boundary(
+        processed_prediction, int(padding / resolution))
 
+    if len(boundary_points) < 1:
+        return []
 
-def load_window(dataset, offset, window_size, padding):
-    x = offset[1] - padding
-    y = offset[0] - padding
+    boundary_lines = order_points(boundary_points)
 
-    width = window_size + padding * 2
-    if (x + width) > dataset.width:
-        width = (dataset.width - x)
-
-    height = window_size + padding * 2
-    if (y + height) > dataset.height:
-        height = (dataset.height - y)
-
-    rasterio_image_data = dataset.read(
-        window=Window(x, y,
-                      width, height)
-    )
-
-    return reshape_as_image(rasterio_image_data)
-
-
-def correct_point_offset(points, offset):
-    return points + offset
+    return [correct_point_offset(np.array(line), np.array(offset), resolution) for line in boundary_lines]

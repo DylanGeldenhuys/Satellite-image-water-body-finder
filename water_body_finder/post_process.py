@@ -18,7 +18,7 @@ def process(arr):
     out: ndarray
         Processed prediction array.
     """
-    prediction_close = binary_closing(arr, iterations=2)
+    prediction_close = binary_closing(arr)
     prediction_open = binary_opening(prediction_close)
     prediction_noise_reduction = reduce_noise(prediction_open, 300, 6000)
     return smooth(prediction_noise_reduction)

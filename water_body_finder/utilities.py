@@ -7,7 +7,11 @@ import pandas as pd
 import numpy as np
 from scipy.ndimage.measurements import label
 import numpy as np
-import cv2
+import cv2 as cv
+import rasterio
+from rasterio.plot import reshape_as_image
+from rasterio.windows import Window
+from rasterio.enums import Resampling
 
 
 def rgb_to_grey(rgb):
@@ -29,7 +33,7 @@ def rgb_to_grey(rgb):
     return np.array((0.299*r + 0.587*g + 0.114*b), dtype=np.uint8)
 
 
-def get_boundary(mask):
+def get_boundary(mask, padding):
     """Gets boundary points from mask.
 
     Parameters
@@ -42,20 +46,18 @@ def get_boundary(mask):
     out: array
         List of boundary points.
     """
-    edges = []
+    kernel = np.array([[0, -1, 0],
+                       [-1, 4, -1],
+                       [0, -1, 0]])
 
-    height = mask.shape[0] - 1
-    width = mask.shape[1] - 1
-
-    for j in range(1, height):
-        for i in range(1, width):
-            if (mask[j, i] == 0):
-                if (mask[j, i + 1] == 1 or mask[j, i - 1] == 1 or mask[j + 1, i] == 1 or mask[j - 1, i] == 1):
-                    edges.append([j, i])
-    return edges
+    boundary_mask = cv.filter2D(
+        np.uint8(mask) * 255, -1, kernel)[padding:-padding, padding:-padding]
+    boundary_points_split = np.where(boundary_mask)
+    return [list(a) for a in zip(
+        boundary_points_split[0], boundary_points_split[1])]
 
 
-def order_edge_points(points):
+def order_points(points):
     """Orders edge points.
 
     Parameters
@@ -71,32 +73,54 @@ def order_edge_points(points):
     complex_points_ls = list(points)
     ordered_list = [[]]
     polygon_index = 0
-    point = points[0]
-    point_index = 0
+    point = complex_points_ls.pop(0)
 
-    while len(complex_points_ls) > 1:
+    retry_num = 0
+    temp_points = []
+
+    while len(complex_points_ls) > 0:
         point_found = False
         for i in range(len(complex_points_ls)):
-            if (abs(complex_points_ls[i][0] - point[0]) <= 1 and abs(complex_points_ls[i][1] - point[1]) <= 1):
-                if ((point[0], point[1]) != (points[i][0], points[i][1])):
-                    ordered_list[polygon_index].append(list(point))
-                    point = complex_points_ls[i]
-                    complex_points_ls.pop(point_index)
-                    point_index = i
-                    point_found = True
-                    break
+            if is_touching(complex_points_ls[i], point):
+                ordered_list[polygon_index].append(point)
+                point = complex_points_ls.pop(i)
+                point_found = True
+                temp_points = []
+                retry_num = 0
+                break
 
         if point_found == False:
-            ordered_list[polygon_index].append(list(point))
-            complex_points_ls.pop(point_index)
-            point = complex_points_ls[0]
-            point_index = 0
-            polygon_index += 1
-            ordered_list.append([])
+            if len(ordered_list[polygon_index]) < 1:
+                point = complex_points_ls.pop(0)
+                continue
 
-    ordered_list[polygon_index].append(list(point))
+            if len(ordered_list[polygon_index]) > 3 and is_touching(ordered_list[polygon_index][0], point):
+                ordered_list[polygon_index].append(point)
+                point = complex_points_ls.pop(0)
+                polygon_index += 1
+                ordered_list.append([])
+                temp_points = []
+                retry_num = 0
+            elif retry_num < 5:
+                temp_points.insert(0, point)
+                point = ordered_list[polygon_index].pop()
+                retry_num += 1
+            else:
+                ordered_list[polygon_index] += temp_points
+                ordered_list[polygon_index].append(point)
+                point = complex_points_ls.pop(0)
+                polygon_index += 1
+                ordered_list.append([])
+                temp_points = []
+                retry_num = 0
 
-    return ordered_list
+    ordered_list[polygon_index].append(point)
+
+    return [x for x in ordered_list if len(x) > 10]
+
+
+def is_touching(point_a, point_b, resolution=1):
+    return abs(point_a[0] - point_b[0]) <= resolution and abs(point_a[1] - point_b[1]) <= resolution
 
 
 def reduce_noise(arr, inner_threshold, outer_threshold):
@@ -158,7 +182,7 @@ def smooth(arr):
     erode_ = (1, 1)
     dilate_ = (4, 4)
     result = np.float32(result)
-    result = cv2.dilate(cv2.erode(cv2.GaussianBlur(
+    result = cv.dilate(cv.erode(cv.GaussianBlur(
         result, blur[0], blur[1]), np.ones(erode_)), np.ones(dilate_))
     result = np.int8(result)
 
@@ -173,10 +197,34 @@ def save_geojson(ordered_list, image_src, filename):
         return(rasterio_object.transform * pixel_coordinate)
 
     for line in ordered_list:
-        tuple_of_tuples = tuple(tuple(point) for point in line)
+        tuple_of_tuples = tuple((point[1], point[0]) for point in line)
         Lstring = LineString(
             list(map(pixelcoord_to_geocoord, tuple_of_tuples)))
-        features.append(Feature(geometry=Lstring))
+        features.append(Feature(geometry=Lstring.simplify(0.00001)))
     feature_collection = FeatureCollection(features)
     with open(filename, 'w') as f:
         dump(feature_collection, f)
+
+
+def load_window(dataset, offset, window_size, padding):
+    x = offset[1] - padding
+    y = offset[0] - padding
+
+    width = window_size + padding * 2
+    if (x + width) > dataset.width:
+        width = (dataset.width - x)
+
+    height = window_size + padding * 2
+    if (y + height) > dataset.height:
+        height = (dataset.height - y)
+
+    rasterio_image_data = dataset.read(
+        window=Window(x, y,
+                      width, height)
+    )
+
+    return reshape_as_image(rasterio_image_data)
+
+
+def correct_point_offset(points, offset, resolution):
+    return (points * resolution) + offset
