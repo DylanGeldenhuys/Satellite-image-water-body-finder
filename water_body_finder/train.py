@@ -52,7 +52,7 @@ def train_model(output_dir, training_dir, version="0"):
         X, y, test_size=0.33)
 
     rfc = RandomForestClassifier(
-        n_estimators=5, min_samples_leaf=3)
+        n_estimators=100, min_samples_leaf=3)
 
     print("Training forest...")
     rfc.fit(X_train, y_train)
