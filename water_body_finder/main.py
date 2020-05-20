@@ -26,13 +26,17 @@ def save_multiple(rfc, image_input_dir, output_dir, padding, window_size, resolu
 
     for filename in filenames:
         image_src = Path(image_input_dir).joinpath(filename)
-        boundary_lines = find_image_boundary_lines_async(
+        boundary_lines, grid = find_image_boundary_lines_async(
             rfc, image_src, padding, window_size, resolution)
         geo_json_dir = Path(output_dir).joinpath("geo_data")
         geo_json_dir.mkdir(parents=True, exist_ok=True)
 
+        visual_lines = []
+        visual_lines += boundary_lines
+        visual_lines += grid
+
         np.save(geo_json_dir.joinpath(
-            filename.replace('tif', 'npy')), boundary_lines)
+            filename.replace('tif', 'npy')), visual_lines)
         save_geojson(boundary_lines, image_src, geo_json_dir.joinpath(
             filename.replace('tif', 'geojson')))
 
@@ -60,16 +64,24 @@ def find_image_boundary_lines_async(rfc, image_input_src, padding, window_size, 
     pool.close()
     pool.join()
 
+    grid = []
+    for y in range(padding, dataset.height - padding, window_size):
+        grid.append([[y, 0], [y, dataset.width]])
+    for x in range(padding, dataset.width - padding, window_size):
+        grid.append([[0, x], [dataset.height, x]])
+
     boundary_lines = []
     for line in boundary_lines_ls:
         boundary_lines += line
 
-    return stitch_boundary_lines(boundary_lines, resolution * 10)
+    return stitch_boundary_lines(boundary_lines, resolution * 10), grid
 
 
 def stitch_boundary_lines(boundary_lines, resolution):
     polygons = []
     line_ls = boundary_lines
+    if len(line_ls) < 1:
+        return []
     current_line = line_ls.pop(0)
 
     while len(line_ls) > 0:
