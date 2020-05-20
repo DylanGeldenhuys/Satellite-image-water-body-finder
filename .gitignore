@@ -7,12 +7,12 @@ data/
 wheels/
 temp/
 work_dir/
-water_body_finder/__pycache__/
-water_body_finder/feature_extraction/__pycache__/
-water_body_finder/utilities/__pycache__/
 data_processing/
 tests/
 training/
+water_body_finder/__pycache__/
+water_body_finder/feature_extraction/__pycache__/
+water_body_finder/utilities/__pycache__/
 total_images.py/
 
 .gitignore
