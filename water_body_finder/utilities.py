@@ -71,6 +71,8 @@ def order_points(points):
         List of line boundary points.
     """
     complex_points_ls = list(points)
+    if (len(complex_points_ls) < 1):
+        return []
     ordered_list = [[]]
     polygon_index = 0
     point = complex_points_ls.pop(0)
