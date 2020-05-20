@@ -25,31 +25,38 @@ def train_model(output_dir, training_dir, version="0"):
     rfc_path = Path(output_dir).joinpath('rfc')
     rfc_path.mkdir(parents=True, exist_ok=True)
 
-    filenames = os.listdir(Path(training_dir)).joinpath(
+    training_path = Path(training_dir).joinpath(
         "version_{}".format(version))
+    filenames = os.listdir(training_path)
 
     full_training_set = pd.DataFrame()
     for filename in filenames:
         full_training_set = full_training_set.append(pd.read_csv(
-            training_dir.joinpath(filename)).iloc[:, 1:])
+            training_path.joinpath(filename)).iloc[:, 1:])
 
     positive_samples = full_training_set[full_training_set.label == False]
     negative_samples = full_training_set[full_training_set.label == True]
 
+    print("Positive: {0} Negative: {1}".format(
+        len(positive_samples), len(negative_samples)))
+
     final_training_set = pd.DataFrame()
     if (len(positive_samples) > len(negative_samples)):
-        positive_samples.sample(
+        positive_samples = positive_samples.sample(
             frac=len(negative_samples) / len(positive_samples))
     if (len(negative_samples) > len(positive_samples)):
-        negative_samples.sample(
+        negative_samples = negative_samples.sample(
             frac=len(positive_samples) / len(negative_samples))
+
+    print("Positive: {0} Negative: {1}".format(
+        len(positive_samples), len(negative_samples)))
     final_training_set = final_training_set.append(
         positive_samples).append(negative_samples)
 
     X = final_training_set.drop('label', axis=1)
     y = list(map(int, final_training_set['label']))
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.33)
+        X, y, test_size=0.4)
 
     rfc = RandomForestClassifier(
         n_estimators=100, min_samples_leaf=3)
@@ -80,7 +87,7 @@ def train_model(output_dir, training_dir, version="0"):
     print('\n')
 
 
-def create_training(image_input_dir, geo_data_dir, output_dir, version="0", window_size=3000, padding=20, resolution=3, sample_ratio=0.01):
+def create_training(image_input_dir, geo_data_dir, output_dir, version="0", window_size=3000, padding=20, resolution=3, sample_ratio=0.001):
     filenames = os.listdir(Path(geo_data_dir))
     training_dir = Path(output_dir).joinpath(
         "training").joinpath("version_{}".format(version))
@@ -102,7 +109,7 @@ def create_training_set_single_async(output_dir, image_input_src, geo_data_src, 
     pool = mp.Pool()
 
     dataset = rasterio.open(image_input_src)
-    n_samples = (dataset.width * dataset.height) / 2
+    n_samples = (dataset.width * dataset.height) * sample_ratio / 2
 
     training_set_ls = []
 
@@ -136,7 +143,7 @@ def create_training_set_single_async(output_dir, image_input_src, geo_data_src, 
     final_training_set = final_training_set.append(
         positive_set.sample(frac=positive_frac))
     final_training_set = final_training_set.append(
-        positive_set.sample(frac=negative_frac))
+        negative_set.sample(frac=negative_frac))
 
     return final_training_set
 
