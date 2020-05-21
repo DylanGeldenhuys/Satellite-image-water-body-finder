@@ -9,8 +9,7 @@ import rasterio
 from shapely.geometry import Polygon
 
 from .feature_extraction import extract_features
-from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching
-from .post_process import process
+from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching, post_process
 
 
 def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.path.realpath(__file__)) + '/rfc', rfc_version="0", padding=600, window_size=3000, resolution=3):
@@ -24,7 +23,7 @@ def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.pat
 def save_multiple(rfc, image_input_dir, output_dir, padding, window_size, resolution):
     filenames = os.listdir(image_input_dir)
 
-    for filename in filenames:
+    for filename in filenames[0:2]:
         image_src = Path(image_input_dir).joinpath(filename)
         boundary_lines, grid = find_image_boundary_lines_async(
             rfc, image_src, padding, window_size, resolution)
@@ -118,7 +117,7 @@ def find_boundary_lines(rfc, image_input_src, offset, window_size, padding, reso
     prediction = rfc.predict(features)
     height, width, channels = image_data[::resolution, ::resolution, :].shape
     prediction_img = prediction.reshape(height, width)
-    processed_prediction = process(prediction_img)
+    processed_prediction = post_process(prediction_img)
 
     boundary_points = get_boundary(
         processed_prediction, int(padding / resolution))
