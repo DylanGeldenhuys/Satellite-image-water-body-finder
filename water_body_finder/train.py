@@ -21,7 +21,7 @@ from .feature_extraction import extract_features
 from .utilities import load_window
 
 
-def train_model(output_dir, training_dir, version="0"):
+def train_model(output_dir, training_dir, version="0", sub_version=None):
     rfc_path = Path(output_dir).joinpath('rfc')
     rfc_path.mkdir(parents=True, exist_ok=True)
 
@@ -36,9 +36,6 @@ def train_model(output_dir, training_dir, version="0"):
 
     positive_samples = full_training_set[full_training_set.label == False]
     negative_samples = full_training_set[full_training_set.label == True]
-
-    print("Positive: {0} Negative: {1}".format(
-        len(positive_samples), len(negative_samples)))
 
     final_training_set = pd.DataFrame()
     if (len(positive_samples) > len(negative_samples)):
@@ -59,14 +56,15 @@ def train_model(output_dir, training_dir, version="0"):
         X, y, test_size=0.4)
 
     rfc = RandomForestClassifier(
-        n_estimators=100, min_samples_leaf=3)
+        n_estimators=5, min_samples_leaf=3)
 
     print("Training forest...")
     rfc.fit(X_train, y_train)
 
     print('\n')
     print("Pickling forest...")
-    pickle.dump(rfc, open(rfc_path.joinpath("rfc_{}.p".format(version)), "wb"))
+    pickle.dump(rfc, open(rfc_path.joinpath("rfc_{0}{1}.p".format(
+        version, "_{}".format(sub_version) if sub_version != None else "")), "wb"))
 
     print('\n')
     print("Predicting...")
@@ -87,31 +85,36 @@ def train_model(output_dir, training_dir, version="0"):
     print('\n')
 
 
-def create_training(image_input_dir, geo_data_dir, output_dir, version="0", window_size=3000, padding=20, resolution=3, sample_ratio=0.001):
+def create_training(image_input_dir, geo_data_dir, output_dir, version="0", window_size=3000, padding=20, resolution=3, percentage_sample=1):
     filenames = os.listdir(Path(geo_data_dir))
     training_dir = Path(output_dir).joinpath(
         "training").joinpath("version_{}".format(version))
     training_dir.mkdir(parents=True, exist_ok=True)
 
-    for filename in filenames:
+    pool = mp.Pool()
+    for filename in filenames[0:5]:
         image_input_src = Path(image_input_dir).joinpath(
             filename.replace('geojson', 'tif'))
         geo_data_src = Path(geo_data_dir).joinpath(filename)
 
         training_set = create_training_set_single_async(
-            output_dir, image_input_src, geo_data_src, window_size, padding, resolution, sample_ratio)
+            output_dir, image_input_src, geo_data_src, window_size, padding, resolution, percentage_sample, pool)
         training_set.to_csv(training_dir.joinpath(
             filename.replace('geojson', 'csv')))
-        print("Completed: {}".format(filename.replace('geojson', '')))
+        print("Completed: {}".format(filename.replace('.geojson', '')))
+
+    pool.close()
+    pool.join()
 
 
-def create_training_set_single_async(output_dir, image_input_src, geo_data_src, window_size, padding, resolution, sample_ratio):
-    pool = mp.Pool()
-
+def create_training_set_single_async(output_dir, image_input_src, geo_data_src, window_size, padding, resolution, percentage_sample, pool):
     dataset = rasterio.open(image_input_src)
-    n_samples = (dataset.width * dataset.height) * sample_ratio / 2
 
     training_set_ls = []
+
+    with open(geo_data_src) as f:
+        geo_data = json.load(f)
+    labels = create_label(dataset, geo_data)
 
     def callback(training_set):
         training_set_ls.append(training_set)
@@ -119,21 +122,34 @@ def create_training_set_single_async(output_dir, image_input_src, geo_data_src, 
     def error_callback(error):
         print(str(error))
 
+    results = []
     for y in range(padding, dataset.height - padding, window_size):
         for x in range(padding, dataset.width - padding, window_size):
-            pool.apply_async(create_training_set_section, args=(
-                image_input_src, geo_data_src, [y, x], window_size, padding, resolution, n_samples), error_callback=error_callback, callback=callback)
+            result = pool.apply_async(create_training_set_section, args=(
+                image_input_src, geo_data_src, labels, [y, x], window_size, padding, resolution, percentage_sample), error_callback=error_callback, callback=callback)
+            results.append(result)
 
-    pool.close()
-    pool.join()
-
+    [result.wait() for result in results]
     full_training_set = pd.DataFrame()
     for training_set in training_set_ls:
         full_training_set = full_training_set.append(training_set)
 
-    positive_set = full_training_set[full_training_set.label == False]
-    negative_set = full_training_set[full_training_set.label == True]
+    return full_training_set
 
+
+def create_training_set_section(image_input_src, geo_data_src, labels, offset, window_size, padding, resolution, percentage_sample):
+    dataset = rasterio.open(image_input_src)
+    image_data = load_window(dataset, offset, window_size, padding)
+    height, width = image_data[padding:-
+                               padding: resolution, padding: -padding: resolution, 0].shape
+    training_set = extract_features(image_data, resolution, padding)
+    training_set['label'] = labels[offset[0]: offset[0] +
+                                   height, offset[1]: offset[1] + width].flatten()
+
+    positive_set = training_set[training_set.label == False]
+    negative_set = training_set[training_set.label == True]
+
+    n_samples = (height * width * percentage_sample) / 200
     positive_frac = (n_samples / len(positive_set)
                      ) if len(positive_set) > n_samples else 1
     negative_frac = (n_samples / len(negative_set)
@@ -146,21 +162,6 @@ def create_training_set_single_async(output_dir, image_input_src, geo_data_src, 
         negative_set.sample(frac=negative_frac))
 
     return final_training_set
-
-
-def create_training_set_section(image_input_src, geo_data_src, offset, window_size, padding, resolution, n_samples):
-    dataset = rasterio.open(image_input_src)
-    image_data = load_window(dataset, offset, window_size, padding)
-    height, width, channels = image_data[padding:-
-                                         padding: resolution, padding: -padding: resolution, :].shape
-    with open(geo_data_src) as f:
-        geo_data = json.load(f)
-    training_set = extract_features(image_data, resolution, padding)
-    labels = create_label(dataset, geo_data)[offset[0]: offset[0] +
-                                             height, offset[1]: offset[1] + width].flatten()
-    training_set['label'] = labels
-
-    return training_set
 
 
 def create_label(dataset, geo_data):

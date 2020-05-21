@@ -10,7 +10,30 @@ from skimage.morphology import disk
 from .utilities import rgb_to_grey
 
 
-def extract_features(image_data, data_resolution, padding=0):
+def extract_features(image_data, data_resolution, padding=0, version="0"):
+    """Extracts features from image.
+
+    Parameters
+    ----------
+    image_data: ndarray
+        2D image numpy array.
+    data_resolution: int
+        Steps taken over data when extracting features.
+    padding: int
+        Padding taken around data. Left out of result.
+    version: string
+        Version of feature extraction to use.
+
+    Returns
+    -------
+    out: DataFrame
+        Pandas dataframe of features.
+    """
+
+    return locals()["version_{}".format(version)](image_data, data_resolution, padding)
+
+
+def version_0(image_data, data_resolution, padding=0):
     """Extracts features from image.
 
     Parameters
