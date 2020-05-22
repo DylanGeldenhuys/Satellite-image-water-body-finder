@@ -30,7 +30,7 @@ def extract_features(image_data, data_resolution, padding=0, version="0"):
         Pandas dataframe of features.
     """
 
-    return locals()["version_{}".format(version)](image_data, data_resolution, padding)
+    return globals()["version_{}".format(version)](image_data, data_resolution, padding)
 
 
 def version_0(image_data, data_resolution, padding=0):
