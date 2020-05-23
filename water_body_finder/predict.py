@@ -11,43 +11,185 @@ import pickle
 import multiprocessing as mp
 
 from .feature_extraction import extract_features
-from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching
+from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching, post_process
 
 
-def predict_mask_full(rfc, img_src, padding, window_size, resolution, pool):
-    """"""
-    dataset = rasterio.open(img_src)
-    width = int(dataset.width / resolution)
-    height = int(dataset.height / resolution)
-    prediction = np.full([height, width], True, dtype=bool)
+class Model:
+    def __init__(self, rfc, img_src, padding, window_size, resolution, pool):
+        self.rfc = rfc
+        self.img_src = img_src
+        self.padding = padding
+        self.window_size = window_size
+        self.resolution = resolution
 
-    def callback(result):
-        mask, offset = result
-        prediction[offset[0]:offset[0] + mask.shape[0],
-                   offset[1]:offset[1] + mask.shape[1]] = mask
+    def predict_polygons(self, pool):
+        mask = self.predict_mask_full(pool)
+        processed_mask = post_process(mask)
+        boundary_mask = get_boundary(processed_mask, self.padding)
 
-    def error_callback(error):
-        print(str(error))
+        boundary_lines_ls = []
 
-    results = []
-    for y in range(padding, dataset.height - padding, window_size):
-        for x in range(padding, dataset.width - padding, window_size):
-            result = pool.apply_async(predict_mask, args=(
-                rfc, img_src, [y, x], window_size, padding, resolution), error_callback=error_callback, callback=callback)
-            results.append(result)
+        def callback(result):
+            boundary_lines_ls.append(result)
 
-    [result.wait() for result in results]
+        def error_callback(error):
+            print(str(error))
 
-    return prediction
+        height, width = boundary_mask.shape
+        results = []
+        for y in range(self.padding, height - self.padding, self.window_size):
+            for x in range(self.padding, width - self.padding, self.window_size):
+                offset = [y, x]
+                section = get_section(
+                    boundary_mask, offset, self.window_size)
+                result = pool.apply_async(
+                    self.get_boundary_lines, args=[section, offset], error_callback=error_callback, callback=callback)
+                results.append(result)
+
+        [result.wait() for result in results]
+
+        boundary_lines = []
+        for boundary_line_group in boundary_lines_ls:
+            for boundary_line in boundary_line_group:
+                if len(boundary_line) > 0:
+                    boundary_lines.append(boundary_line)
+
+        return self.stitch_polygons(boundary_lines)
+
+    def stitch_polygons(self, lines):
+        polygons = []
+        iteration_depth = 50
+
+        if len(lines) < 1:
+            return []
+
+        current_line = lines.pop(0)
+
+        switched = False
+        while len(lines) > 0:
+            found = False
+
+            shortest_iteration_depth = int(len(current_line) / 2) - 1
+            current_line_iteration_depth = iteration_depth if shortest_iteration_depth > iteration_depth else shortest_iteration_depth
+
+            if is_touching(current_line[0], current_line[len(current_line) - 1], iteration_depth * self.resolution):
+                for j in range(current_line_iteration_depth):
+                    current_line_index = len(current_line) - (1 + j)
+                    for k in range(current_line_iteration_depth):
+                        if is_touching(current_line[current_line_index], current_line[k], self.resolution):
+                            polygons.append(
+                                current_line[k:current_line_index + 1])
+                            current_line = lines.pop(
+                                0) if len(lines) > 0 else None
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    continue
+
+            if is_touching(current_line[0], current_line[-1], self.resolution):
+                polygons.append(current_line)
+                current_line = lines.pop(0) if len(lines) > 0 else None
+                continue
+
+            for i in range(len(lines)):
+                if is_touching(current_line[len(current_line) - 1], lines[i][0], iteration_depth * self.resolution) \
+                        or is_touching(current_line[len(current_line) - 1], lines[i][0], iteration_depth * self.resolution):
+
+                    shortest_iteration_depth = int(len(lines[i]) / 2) - 1
+                    testing_line_iteration_depth = iteration_depth if shortest_iteration_depth > iteration_depth else shortest_iteration_depth
+
+                    for j in range(current_line_iteration_depth):
+                        current_line_index = len(current_line) - (1 + j)
+                        for k in range(testing_line_iteration_depth):
+                            if is_touching(current_line[current_line_index], lines[i][k], self.resolution):
+                                current_line = current_line[:current_line_index + 1]
+                                current_line = list(
+                                    current_line) + list(lines.pop(i)[k:])
+                                found = True
+                                break
+                            elif is_touching(current_line[current_line_index], list(reversed(lines[i]))[k], self.resolution):
+                                current_line = current_line[:current_line_index + 1]
+                                current_line = list(
+                                    current_line) + list(reversed(lines.pop(i)))[k:]
+                                found = True
+                                break
+                        if found:
+                            break
+                    if found:
+                        break
+
+            if found == False and switched == False:
+                switched = True
+                current_line = reversed(current_line)
+
+            if found == False and switched:
+                switched = False
+                polygons.append(current_line)
+                current_line = lines.pop(0) if len(lines) > 0 else None
+
+        return polygons
+
+    def get_boundary_lines(self, mask, offset):
+        boundary_points_split = np.where(mask)
+        boundary_points = [list(a) for a in zip(
+            boundary_points_split[0], boundary_points_split[1])]
+
+        lines = order_points(boundary_points)
+        return [correct_point_offset(line, np.array(offset) * self.resolution, self.resolution) for line in lines]
+
+    def predict_mask_full(self, pool):
+        """"""
+        dataset = rasterio.open(self.img_src)
+        width = int(dataset.width / self.resolution)
+        height = int(dataset.height / self.resolution)
+        prediction = np.full([height, width], True, dtype=bool)
+
+        def callback(result):
+            mask, offset = result
+            prediction[offset[0]: offset[0] + mask.shape[0],
+                       offset[1]: offset[1] + mask.shape[1]] = mask
+
+        def error_callback(error):
+            print(str(error))
+
+        results = []
+        for y in range(self.padding, dataset.height - self.padding, self.window_size):
+            for x in range(self.padding, dataset.width - self.padding, self.window_size):
+                offset = [y, x]
+                result = pool.apply_async(self.predict_mask, args=[
+                    offset], error_callback=error_callback, callback=callback)
+                results.append(result)
+
+        [result.wait() for result in results]
+
+        return prediction
+
+    def predict_mask(self, offset):
+        """"""
+        dataset = rasterio.open(self.img_src)
+        image_data = load_window(
+            dataset, offset, self.window_size, self.padding)
+        features = extract_features(image_data, self.resolution, self.padding)
+
+        prediction = self.rfc.predict(features)
+        height, width = image_data[self.padding: -
+                                   self.padding: self.resolution, self.padding: -self.padding: self.resolution, 0].shape
+        return prediction.reshape(height, width), [int(x / self.resolution) for x in offset]
 
 
-def predict_mask(rfc, image_input_src, offset, window_size, padding, resolution):
-    """"""
-    dataset = rasterio.open(image_input_src)
-    image_data = load_window(dataset, offset, window_size, padding)
-    features = extract_features(image_data, resolution, padding)
+def get_section(arr, offset, window_size):
+    x = offset[1]
+    y = offset[0]
 
-    prediction = rfc.predict(features)
-    height, width = image_data[padding:-
-                               padding:resolution, padding:-padding:resolution, 0].shape
-    return prediction.reshape(height, width), [int(x / resolution) for x in offset]
+    arr_height, arr_width = arr.shape
+    width = window_size
+    if (x + width) > arr_width:
+        width = (arr_width - x)
+
+    height = window_size
+    if (y + height) > arr_height:
+        height = (arr_height - y)
+
+    return arr[y: y + height, x: x + width]

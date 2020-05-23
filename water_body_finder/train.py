@@ -141,15 +141,16 @@ def create_training_set_section(image_input_src, geo_data_src, labels, offset, w
     dataset = rasterio.open(image_input_src)
     image_data = load_window(dataset, offset, window_size, padding)
     height, width = image_data[padding:-
-                               padding: resolution, padding: -padding: resolution, 0].shape
+                               padding, padding: -padding, 0].shape
     training_set = extract_features(image_data, resolution, padding)
     training_set['label'] = labels[offset[0]: offset[0] +
-                                   height, offset[1]: offset[1] + width].flatten()
+                                   height:resolution, offset[1]: offset[1] + width:resolution].flatten()
 
     positive_set = training_set[training_set.label == False]
     negative_set = training_set[training_set.label == True]
 
-    n_samples = (height * width * percentage_sample) / 200
+    n_samples = (height / resolution) * \
+        (width / resolution) * percentage_sample / 200
     positive_frac = (n_samples / len(positive_set)
                      ) if len(positive_set) > n_samples else 1
     negative_frac = (n_samples / len(negative_set)
@@ -167,7 +168,8 @@ def create_training_set_section(image_input_src, geo_data_src, labels, offset, w
 def create_label(dataset, geo_data):
     shapes = []
     for feature in geo_data['features']:
-        shapes.append(geometry.Polygon(
-            [[p[0], p[1]] for p in feature['geometry']['coordinates'][0]]))
+        for coordinate_group in feature['geometry']['coordinates']:
+            shapes.append(geometry.Polygon(
+                [[p[0], p[1]] for p in coordinate_group]))
     # create mask from shapes
     return rasterio.mask.raster_geometry_mask(dataset, shapes)[0]

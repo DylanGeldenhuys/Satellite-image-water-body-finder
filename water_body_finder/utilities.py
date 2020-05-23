@@ -12,6 +12,7 @@ import rasterio
 from rasterio.plot import reshape_as_image
 from rasterio.windows import Window
 from rasterio.enums import Resampling
+from scipy.ndimage.morphology import binary_closing, binary_opening
 
 
 def rgb_to_grey(rgb):
@@ -39,12 +40,12 @@ def get_boundary(mask, padding):
     Parameters
     ----------
     maks : ndarray
-        2D mask numpy array.
+        2D mask.
 
     Returns
     -------
-    out: array
-        List of boundary points.
+    out: ndarray
+        2D boundary mask.
     """
     kernel = np.array([[0, -1, 0],
                        [-1, 4, -1],
@@ -52,9 +53,9 @@ def get_boundary(mask, padding):
 
     boundary_mask = cv.filter2D(
         np.uint8(mask) * 255, -1, kernel)[padding:-padding, padding:-padding]
-    boundary_points_split = np.where(boundary_mask)
-    return [list(a) for a in zip(
-        boundary_points_split[0], boundary_points_split[1])]
+    binary_mask = np.where(boundary_mask, True, False)
+
+    return np.pad(binary_mask, padding, 'constant', constant_values=False)
 
 
 def order_points(points):
@@ -229,7 +230,7 @@ def load_window(dataset, offset, window_size, padding):
 
 
 def correct_point_offset(points, offset, resolution):
-    return (points * resolution) + offset
+    return list((np.array(points) * resolution) + np.array(offset))
 
 
 def post_process(arr):
