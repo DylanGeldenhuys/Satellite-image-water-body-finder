@@ -26,7 +26,7 @@ def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.pat
 
     filenames = os.listdir(image_input_dir)
     pool = mp.Pool()
-    for filename in filenames[0:1]:
+    for filename in filenames:
         img_src = image_input_path.joinpath(filename)
         model = Model(rfc, img_src, padding, window_size, resolution, pool)
         polygons = model.predict_polygons(pool)
