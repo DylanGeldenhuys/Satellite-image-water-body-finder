@@ -1,88 +1,46 @@
-
 # satalite-image-water-body-finder
 
-satelite-image-water-body-finder is a computer vision system that detects and delineates water bodies using a random forest classifier at its core. Given a georeferenced '.tif' file the vission system generates '.geojson' files that conatin feature polygons that delineate waterbodies. 
+Authors _S.R.K Gasson & D.S Geldenhuys_
+
+satelite-image-water-body-finder is a computer vision system that detects and delineates water bodies using a random forest classifier at its core. Given a georeferenced '.tif' file the vission system generates '.geojson' files that conatin feature polygons that delineate waterbodies.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to
+deploy the project on a live system.
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+For installation on Windows:
+
+Before installing, it is required to install the following windows binaries:
+
+-Gdal
+-Rasterio
+
+These can all be downloaded from the following link:
+https://www.lfd.uci.edu/~gohlke/pythonlibs/
+Use ctr+f to search through the windows binaries on this page and locate the wheels. Select the correct version for you system. The first in the list is typically the latest and correct version.
+
+To install the wheels, run the following from within your environment for each wheel:
 
 ```
-Give examples
+pip install <path-to-wheel>
+```
+
+For example:
+
+```
+pip install C:\wheels\GDAL-3.0.4-cp38-cp38-win_amd64.whl
+pip install C:\wheels\rasterio-1.1.3-cp38-cp38-win_amd64.whl
 ```
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
+Once these wheels are installed, run the following from within the root of the cloned repository to install dependencies and the water_body_finder package:
 
 ```
-Give the example
+pip install .
 ```
 
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+See the demo.py file for an example of how to use the water_body_finder package.

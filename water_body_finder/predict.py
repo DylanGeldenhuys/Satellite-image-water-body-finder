@@ -9,7 +9,6 @@ from rasterio.enums import Resampling
 import numpy as np
 import pickle
 import multiprocessing as mp
-import gdal
 
 from .feature_extraction import extract_features
 from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching, post_process
