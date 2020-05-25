@@ -2,7 +2,7 @@
 
 Authors _S.R.K Gasson & D.S Geldenhuys_
 
-satelite-image-water-body-finder is a computer vision system that detects and delineates water bodies using a random forest classifier at its core. Given a georeferenced '.tif' file the vission system generates '.geojson' files that conatin feature polygons that delineate waterbodies.
+satelite-image-water-body-finder is a computer vision system that detects and delineates water bodies using a random forest classifier at its core. Given an input geo-referenced '.tif' file, the vission system generates '.geojson' files that conatin feature polygons that delineate waterbodies.
 
 ## Getting Started
 
