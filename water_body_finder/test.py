@@ -51,7 +51,7 @@ def save_polygons(image_input_dir, output_dir, rfc_dir, version, padding, window
 
     filenames = os.listdir(image_input_dir)
     pool = mp.Pool()
-    for filename in filenames[1:2]:
+    for filename in filenames[:1]:
         img_src = image_input_path.joinpath(filename)
         model = Model(rfc, img_src, padding, window_size, resolution, pool)
         prediction = model.predict_polygons(pool)
