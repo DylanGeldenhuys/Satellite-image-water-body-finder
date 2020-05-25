@@ -9,3 +9,4 @@ temp/
 work_dir/
 *.pyc
 *.egg-info
+*.p

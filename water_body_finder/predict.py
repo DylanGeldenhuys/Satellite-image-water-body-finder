@@ -9,9 +9,33 @@ from rasterio.enums import Resampling
 import numpy as np
 import pickle
 import multiprocessing as mp
+import gdal
 
 from .feature_extraction import extract_features
 from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching, post_process
+
+
+def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.path.realpath(__file__)) + '/rfc', rfc_version="1", padding=50, window_size=3000, resolution=3):
+    image_input_path = Path(image_input_dir)
+    rfc_path = Path(rfc_dir).joinpath("rfc_{}.p".format(rfc_version))
+    output_path = Path(output_dir).joinpath("geo_data")
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    f = open(rfc_path, 'rb')
+    rfc = pickle.load(f)
+
+    filenames = os.listdir(image_input_dir)
+    pool = mp.Pool()
+    for filename in filenames:
+        img_src = image_input_path.joinpath(filename)
+        model = Model(rfc, img_src, padding, window_size, resolution, pool)
+        polygons = model.predict_polygons(pool)
+        save_geojson(polygons, img_src, output_path.joinpath(
+            filename.replace('tif', 'geojson')))
+        print("Completed: {}".format(filename.replace('.tif', '')))
+
+    pool.close()
+    pool.join()
 
 
 class Model:
@@ -58,35 +82,33 @@ class Model:
 
     def stitch_polygons(self, lines):
         polygons = []
-        iteration_depth = 50
+        iteration_depth = 10
 
         if len(lines) < 1:
             return []
 
         current_line = lines.pop(0)
 
-        switched = False
         while len(lines) > 0:
             found = False
 
             shortest_iteration_depth = int(len(current_line) / 2) - 1
             current_line_iteration_depth = iteration_depth if shortest_iteration_depth > iteration_depth else shortest_iteration_depth
 
-            if is_touching(current_line[0], current_line[len(current_line) - 1], iteration_depth * self.resolution):
-                for j in range(current_line_iteration_depth):
-                    current_line_index = len(current_line) - (1 + j)
-                    for k in range(current_line_iteration_depth):
-                        if is_touching(current_line[current_line_index], current_line[k], self.resolution):
-                            polygons.append(
-                                current_line[k:current_line_index + 1])
-                            current_line = lines.pop(
-                                0) if len(lines) > 0 else None
-                            found = True
-                            break
-                    if found:
+            for j in range(current_line_iteration_depth):
+                current_line_index = len(current_line) - (1 + j)
+                for k in range(current_line_iteration_depth):
+                    if is_touching(current_line[current_line_index], current_line[k], self.resolution):
+                        polygons.append(
+                            current_line[k:current_line_index + 1])
+                        current_line = lines.pop(
+                            0) if len(lines) > 0 else None
+                        found = True
                         break
                 if found:
-                    continue
+                    break
+            if found:
+                continue
 
             if is_touching(current_line[0], current_line[-1], self.resolution):
                 polygons.append(current_line)
@@ -94,38 +116,30 @@ class Model:
                 continue
 
             for i in range(len(lines)):
-                if is_touching(current_line[len(current_line) - 1], lines[i][0], iteration_depth * self.resolution) \
-                        or is_touching(current_line[len(current_line) - 1], lines[i][0], iteration_depth * self.resolution):
+                shortest_iteration_depth = int(len(lines[i]) / 2) - 1
+                testing_line_iteration_depth = iteration_depth if shortest_iteration_depth > iteration_depth else shortest_iteration_depth
 
-                    shortest_iteration_depth = int(len(lines[i]) / 2) - 1
-                    testing_line_iteration_depth = iteration_depth if shortest_iteration_depth > iteration_depth else shortest_iteration_depth
-
-                    for j in range(current_line_iteration_depth):
-                        current_line_index = len(current_line) - (1 + j)
-                        for k in range(testing_line_iteration_depth):
-                            if is_touching(current_line[current_line_index], lines[i][k], self.resolution):
-                                current_line = current_line[:current_line_index + 1]
-                                current_line = list(
-                                    current_line) + list(lines.pop(i)[k:])
-                                found = True
-                                break
-                            elif is_touching(current_line[current_line_index], list(reversed(lines[i]))[k], self.resolution):
-                                current_line = current_line[:current_line_index + 1]
-                                current_line = list(
-                                    current_line) + list(reversed(lines.pop(i)))[k:]
-                                found = True
-                                break
-                        if found:
+                for j in range(current_line_iteration_depth):
+                    current_line_index = len(current_line) - (1 + j)
+                    for k in range(testing_line_iteration_depth):
+                        if is_touching(current_line[current_line_index], lines[i][k], self.resolution):
+                            current_line = current_line[:current_line_index + 1]
+                            current_line = list(
+                                current_line) + list(lines.pop(i)[k:])
+                            found = True
+                            break
+                        elif is_touching(current_line[current_line_index], list(reversed(lines[i]))[k], self.resolution):
+                            current_line = current_line[:current_line_index + 1]
+                            current_line = list(
+                                current_line) + list(reversed(lines.pop(i)))[k:]
+                            found = True
                             break
                     if found:
                         break
+                if found:
+                    break
 
-            if found == False and switched == False:
-                switched = True
-                current_line = reversed(current_line)
-
-            if found == False and switched:
-                switched = False
+            if found == False:
                 polygons.append(current_line)
                 current_line = lines.pop(0) if len(lines) > 0 else None
 

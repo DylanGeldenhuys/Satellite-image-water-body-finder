@@ -1,4 +1,4 @@
-from shapely.geometry import LineString
+from shapely.geometry import Polygon
 import rasterio
 from geojson import Point, Feature, FeatureCollection, dump
 from shapely.geometry import mapping
@@ -201,7 +201,7 @@ def save_geojson(ordered_list, image_src, filename):
 
     for line in ordered_list:
         tuple_of_tuples = tuple((point[1], point[0]) for point in line)
-        Lstring = LineString(
+        Lstring = Polygon(
             list(map(pixelcoord_to_geocoord, tuple_of_tuples)))
         features.append(Feature(geometry=Lstring.simplify(0.00001)))
     feature_collection = FeatureCollection(features)
