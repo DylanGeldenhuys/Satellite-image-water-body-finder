@@ -19,7 +19,9 @@ Before installing, it is required to install the following windows binaries:
 -Rasterio
 
 These can all be downloaded from the following link:
+
 https://www.lfd.uci.edu/~gohlke/pythonlibs/
+
 Use ctr+f to search through the windows binaries on this page and locate the wheels. Select the correct version for you system. The first in the list is typically the latest and correct version.
 
 To install the wheels, run the following from within your environment for each wheel:
