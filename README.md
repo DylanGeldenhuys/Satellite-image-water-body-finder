@@ -15,8 +15,8 @@ For installation on Windows:
 
 Before installing, it is required to install the following windows binaries:
 
-    -Gdal
-    -Rasterio
+- Gdal
+- Rasterio
 
 These can all be downloaded from the following link:
 
