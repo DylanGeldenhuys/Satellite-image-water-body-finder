@@ -25,7 +25,7 @@ https://www.lfd.uci.edu/~gohlke/pythonlibs/
 
 Use ctr+f to search through the windows binaries on this page and locate the wheels. Select the correct version for your environment. The first in the list is typically the latest and correct version.
 
-To install the wheels, create an environment (== python 3.7) using [venv](https://docs.python.org/3/tutorial/venv.html) or [anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands) and run the following from within your environment for each wheel:
+To install the wheels, create an environment (== python 3.8) using [venv](https://docs.python.org/3/tutorial/venv.html) or [anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands) and run the following from within your environment for each wheel:
 
 ```
 pip install <path-to-wheel>
