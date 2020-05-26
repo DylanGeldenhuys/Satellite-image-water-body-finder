@@ -17,6 +17,7 @@ Before installing, it is required to install the following windows binaries:
 
 - Gdal
 - Rasterio
+- Shapely
 
 These can all be downloaded from the following link:
 
@@ -35,6 +36,7 @@ For example:
 ```
 pip install C:\wheels\GDAL-3.0.4-cp38-cp38-win_amd64.whl
 pip install C:\wheels\rasterio-1.1.3-cp38-cp38-win_amd64.whl
+pip install C:\wheels\Shapely-1.7.0-cp38-cp38-win_amd64.whl
 ```
 
 ### Installing
