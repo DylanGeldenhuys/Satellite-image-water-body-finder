@@ -3,7 +3,7 @@ from water_body_finder import find_waterbodies, create_training, train_model, sa
 if __name__ == '__main__':
 
     find_waterbodies(image_input_dir="D:/WaterBodyExtraction/WaterPolyData/image_data",
-                     output_dir="D:/Demo/output", rfc_version=0, padding=50, window_size=3000)
+                     output_dir="D:/Demo/output", rfc_version=0, padding=50, window_size=3000, number_concurrent_image_processes=4)
 
     # Training
     # create_training(image_input_dir="D:/WaterBodyExtraction/WaterPolyData/image_data",

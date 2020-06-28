@@ -9,12 +9,33 @@ from rasterio.enums import Resampling
 import numpy as np
 import pickle
 import multiprocessing as mp
+import multiprocessing.pool
 
 from .feature_extraction import extract_features
 from .utilities import get_boundary, order_points, save_geojson, load_window, correct_point_offset, is_touching, post_process
 
 
-def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.path.realpath(__file__)) + '/rfc', rfc_version="1", padding=50, window_size=3000, resolution=3):
+class NoDaemonProcess(mp.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+class NoDaemonContext(type(mp.get_context())):
+    Process = NoDaemonProcess
+
+
+class MyPool(mp.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(MyPool, self).__init__(*args, **kwargs)
+
+
+def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.path.realpath(__file__)) + '/rfc', rfc_version="1", padding=50, window_size=3000, resolution=3, number_concurrent_image_processes=4):
     image_input_path = Path(image_input_dir)
     rfc_path = Path(rfc_dir).joinpath("rfc_{}.p".format(rfc_version))
     output_path = Path(output_dir).joinpath("geo_data")
@@ -23,15 +44,31 @@ def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.pat
     f = open(rfc_path, 'rb')
     rfc = pickle.load(f)
 
-    filenames = os.listdir(image_input_dir)
-    pool = mp.Pool()
+    filenames = os.listdir(image_input_dir)[0:4]
+
+    def error_callback(error):
+        print(str(error))
+
+    pool = MyPool(number_concurrent_image_processes)
+    number_processes = int(
+        (mp.cpu_count() - number_concurrent_image_processes) / number_concurrent_image_processes)
     for filename in filenames:
-        img_src = image_input_path.joinpath(filename)
-        model = Model(rfc, img_src, padding, window_size, resolution, pool)
-        polygons = model.predict_polygons(pool)
-        save_geojson(polygons, img_src, output_path.joinpath(
-            filename.replace('tif', 'geojson')))
-        print("Completed: {}".format(filename.replace('.tif', '')))
+        pool.apply_async(
+            find_waterbody, args=[filename, image_input_path, rfc, padding, window_size, resolution, output_path, number_processes], error_callback=error_callback)
+
+    pool.close()
+    pool.join()
+
+
+def find_waterbody(filename, image_input_path, rfc, padding, window_size, resolution, output_path, number_processes):
+    pool = mp.Pool(number_processes)
+    print("Starting: {}".format(filename.replace('.tif', '')))
+    img_src = image_input_path.joinpath(filename)
+    model = Model(rfc, img_src, padding, window_size, resolution, pool)
+    polygons = model.predict_polygons(pool)
+    save_geojson(polygons, img_src, output_path.joinpath(
+        filename.replace('tif', 'geojson')))
+    print("Completed: {}".format(filename.replace('.tif', '')))
 
     pool.close()
     pool.join()
