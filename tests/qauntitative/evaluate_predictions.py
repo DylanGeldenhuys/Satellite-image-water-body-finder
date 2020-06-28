@@ -7,8 +7,12 @@ import matplotlib.pyplot as plt
 filename = "2531DA03"
 prediction_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/predictions/predictions_3")
-label_dir = Path(
-    "D:/WaterBodyExtraction/WaterPolyData/label_data")
+#label_dir = Path(
+#    "D:/WaterBodyExtraction/WaterPolyData/label_data")
+geo_data_label = Path('')
+with open(geo_data_src) as f:
+    geo_data = json.load(f)
+
 output_dir = Path(
     "D:/WaterBodyExtraction/WaterPolyData/evaluations")
 data_resolution = 3

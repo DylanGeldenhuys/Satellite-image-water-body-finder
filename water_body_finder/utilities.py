@@ -204,7 +204,13 @@ def save_geojson(ordered_list, image_src, filename):
         Lstring = Polygon(
             list(map(pixelcoord_to_geocoord, tuple_of_tuples)))
         features.append(Feature(geometry=Lstring.simplify(0.00001)))
-    feature_collection = FeatureCollection(features)
+    crs =  {
+        "type": "name",
+            "properties": {
+                "name": "{}".format(str(rasterio_object.crs))
+        }
+    }
+    feature_collection = FeatureCollection(features, crs=crs)
     with open(filename, 'w') as f:
         dump(feature_collection, f)
 
