@@ -53,8 +53,11 @@ def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.pat
     number_processes = int(
         (mp.cpu_count() - number_concurrent_image_processes) / number_concurrent_image_processes)
     for filename in filenames:
-        pool.apply_async(
-            find_waterbody, args=[filename, image_input_path, rfc, padding, window_size, resolution, output_path, number_processes], error_callback=error_callback)
+        if filename[-3:] != 'tif':
+            continue
+        else:
+            pool.apply_async(
+                find_waterbody, args=[filename, image_input_path, rfc, padding, window_size, resolution, output_path, number_processes], error_callback=error_callback)
 
     pool.close()
     pool.join()
