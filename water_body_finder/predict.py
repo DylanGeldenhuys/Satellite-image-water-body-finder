@@ -44,7 +44,7 @@ def find_waterbodies(image_input_dir, output_dir, rfc_dir=os.path.dirname(os.pat
     f = open(rfc_path, 'rb')
     rfc = pickle.load(f)
 
-    filenames = os.listdir(image_input_dir)[0:4]
+    filenames = os.listdir(image_input_dir)
 
     def error_callback(error):
         print(str(error))
