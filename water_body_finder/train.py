@@ -53,10 +53,10 @@ def train_model(output_dir, training_dir, version="0", sub_version=None):
     X = final_training_set.drop('label', axis=1)
     y = list(map(int, final_training_set['label']))
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.4)
+        X, y, test_size=0.2)
 
     rfc = RandomForestClassifier(
-        n_estimators=5, min_samples_leaf=3)
+        n_estimators=100, min_samples_leaf=5)
 
     print("Training forest...")
     rfc.fit(X_train, y_train)
@@ -92,7 +92,7 @@ def create_training(image_input_dir, geo_data_dir, output_dir, version="0", wind
     training_dir.mkdir(parents=True, exist_ok=True)
 
     pool = mp.Pool()
-    for filename in filenames[0:5]:
+    for filename in filenames[:]:
         image_input_src = Path(image_input_dir).joinpath(
             filename.replace('geojson', 'tif'))
         geo_data_src = Path(geo_data_dir).joinpath(filename)
