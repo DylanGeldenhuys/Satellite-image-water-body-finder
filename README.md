@@ -1,4 +1,5 @@
 # satalite-image-water-body-finder
+![image](wbdelin.png)
 
 Authors _S.R.K Gasson & D.S Geldenhuys_
 
