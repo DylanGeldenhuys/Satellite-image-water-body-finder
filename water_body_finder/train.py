@@ -169,6 +169,8 @@ def create_label(dataset, geo_data):
     shapes = []
     for feature in geo_data['features']:
         for coordinate_group in feature['geometry']['coordinates']:
+            while len(coordinate_group) == 1:
+                coordinate_group = coordinate_group[0]
             shapes.append(geometry.Polygon(
                 [[p[0], p[1]] for p in coordinate_group]))
     # create mask from shapes
