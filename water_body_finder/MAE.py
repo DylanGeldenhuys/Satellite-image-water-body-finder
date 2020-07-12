@@ -67,7 +67,9 @@ def Rhist(x, bins=None, xlab='', savename='', color='w', edgecolor='k', figsize=
         ax.set_title('Feature MAEi histogram', fontdict={'fontsize': 12, 'fontweight': 'medium'})  
     elif m==1:
         ax.set_title('Feature MAEj histogram', fontdict={'fontsize': 12, 'fontweight': 'medium'})
-    
+    plt.axvline(x.mean(), color='k', linestyle='dashed', linewidth=1)
+    min_ylim, max_ylim = plt.ylim()
+    plt.text(x.mean()*1.1, max_ylim*0.9, 'Mean: {:.5f}'.format(x.mean()))#:.2f
     ax.set_xlabel(xlab)
     ax.set_ylabel('Frequency')
     plt.tight_layout()
@@ -105,7 +107,7 @@ def get_MAE(ref_geojsons,pred_geojsons, output):
     ref_geojsons = Path(ref_geojsons)
     pred_geojsons = Path(pred_geojsons)
     output = Path(output)
-    for filename in os.listdir(pred_geojsons)[5:6]:
+    for filename in os.listdir(pred_geojsons)[5:]:
         print(ref_geojsons.joinpath(filename))
         ref_list = []
         pred_list = []
@@ -183,8 +185,8 @@ def get_MAE(ref_geojsons,pred_geojsons, output):
     print('average MAEi:{}'.format(np.average(datai.iloc[:,1])) , 'average MAEj:{}'.format(np.average(dataj.iloc[:,1])) )
 
     # Print Histograms
-    Rhist(datai.iloc[:,1], bins = 20,xlab='MAEi', color='orange', edgecolor='w', savename=output.joinpath('MAEi.png'), m=0)
-    Rhist(dataj.iloc[:,1], bins = 20,xlab='MAEj', color='blue', edgecolor='w', savename=output.joinpath('MAEj.png'),m=1)
+    Rhist(datai.iloc[:,1], bins = 25,xlab='MAEi', color='orange', edgecolor='w', savename=output.joinpath('MAEi.png'), m=0)
+    Rhist(dataj.iloc[:,1], bins = 25,xlab='MAEj', color='blue', edgecolor='w', savename=output.joinpath('MAEj.png'),m=1)
 
 
 
