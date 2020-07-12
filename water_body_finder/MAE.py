@@ -110,9 +110,7 @@ def get_MAE(ref_geojsons,pred_geojsons, output):
 
         # append file list
         data_results.append([filename,MAEi(pred_list, ref_list), MAEi(ref_list, pred_list)])
-        
-
-
+    
         for feature in ref_poly:
             MAEi_sample = MAEi(pred_list, feature)
             MAEi_features.append([filename, MAEi_sample])
@@ -132,17 +130,19 @@ def get_MAE(ref_geojsons,pred_geojsons, output):
     print('average MAEi:{}'.format(np.average(datai.iloc[:,1])) , 'average MAEj:{}'.format(np.average(dataj.iloc[:,1])) )
 
     # Print Histograms
+    plt.figure(figsize=(10,10))
     plt.hist(datai.iloc[:,1])
     plt.title('MAEi')
     plt.xlabel('MAEi (m)')
     plt.ylabel('frequency')
-    plt.show()
+    plt.savefig(output.joinpath('MAEi.png'))
 
+    plt.figure(figsize=(10,10))
     plt.hist(dataj.iloc[:,1])
     plt.title('MAEj')
     plt.xlabel('MAEi (m)')
     plt.ylabel('frequency')
-    plt.show()
+    plt.savefig(output.joinpath('MAEj.png'))
 
 #if __name__ == "__main__":
 #    get_MAE(ref_geojsons, pred_geojsons,output )
