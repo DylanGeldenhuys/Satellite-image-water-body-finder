@@ -1,5 +1,6 @@
 env/
 playground/
+wb_env/
 env_waterbody/
 .vscode/
 data/
