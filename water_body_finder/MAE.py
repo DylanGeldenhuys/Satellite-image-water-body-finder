@@ -23,6 +23,59 @@ images = Path("Path/to/directory")
 
 
 # functions
+def Rhist(x, bins=None, xlab='', savename='', color='w', edgecolor='k', figsize=(8,6), offset=5, m = 0):
+    """Makes histograms that look like R
+    Inputs:
+    - x: a numpy array or pandas series
+    - bins: number of bins, default (None) is mpl default
+    - xlab: text label for x axis, default '' (empty)
+    - savename: full name and path of saved figure,
+      if '' (default) nothing saved
+    - color: fill color of bars, default 'w' (white)
+    - edgecolor: outline color of bars, default 'k' (black)
+    - figsize: width, heighth of figure in inches (default 8x6) 
+    - offset: how far to separate axis, default=5 """
+    plt.style.use('seaborn-ticks')
+
+    def adjust_spines(ax, spines, offset):
+
+        for loc, spine in ax.spines.items():
+            if loc in spines:
+                spine.set_position(('outward', offset))  # outward by offset points
+                spine.set_smart_bounds(True)
+            else:
+                spine.set_color('none')  # don't draw spine
+
+        # turn off ticks where there is no spine
+        if 'left' in spines:
+            ax.yaxis.set_ticks_position('left')
+        else:
+            # no yaxis ticks
+            ax.yaxis.set_ticks([])
+
+        if 'bottom' in spines:
+            ax.xaxis.set_ticks_position('bottom')
+        else:
+            # no xaxis ticks
+            ax.xaxis.set_ticks([])
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(1,1,1)
+    ax.hist(x, bins=bins, color = color, edgecolor = edgecolor)
+    adjust_spines(ax, ['left', 'bottom'], offset)
+    if m == 0:
+        ax.set_title('Feature MAEi histogram', fontdict={'fontsize': 12, 'fontweight': 'medium'})  
+    elif m==1:
+        ax.set_title('Feature MAEj histogram', fontdict={'fontsize': 12, 'fontweight': 'medium'})
+    
+    ax.set_xlabel(xlab)
+    ax.set_ylabel('Frequency')
+    plt.tight_layout()
+    plt.savefig(savename)
+    
+
+
+
 def MAEi(extracted_boundary, reference_boundary):
     '''measures the distance from each reference boundary (50x50cm) cell to the nearest extracted
     boundary cell, which provides an indication of how close in geographical space the extracted
@@ -130,22 +183,10 @@ def get_MAE(ref_geojsons,pred_geojsons, output):
     print('average MAEi:{}'.format(np.average(datai.iloc[:,1])) , 'average MAEj:{}'.format(np.average(dataj.iloc[:,1])) )
 
     # Print Histograms
-    plt.figure(figsize=(10,10))
-    plt.hist(datai.iloc[:,1])
-    plt.title('MAEi')
-    plt.xlabel('MAEi (m)')
-    plt.ylabel('frequency')
-    plt.savefig(output.joinpath('MAEi.png'))
+    Rhist(datai.iloc[:,1], bins = 20,xlab='MAEi', color='orange', edgecolor='w', savename=output.joinpath('MAEi.png'), m=0)
+    Rhist(dataj.iloc[:,1], bins = 20,xlab='MAEj', color='blue', edgecolor='w', savename=output.joinpath('MAEj.png'),m=1)
 
-    plt.figure(figsize=(10,10))
-    plt.hist(dataj.iloc[:,1])
-    plt.title('MAEj')
-    plt.xlabel('MAEi (m)')
-    plt.ylabel('frequency')
-    plt.savefig(output.joinpath('MAEj.png'))
 
-#if __name__ == "__main__":
-#    get_MAE(ref_geojsons, pred_geojsons,output )
 
 
         
