@@ -1,4 +1,4 @@
-# satalite-image-water-body-finder
+# Satellite-image-water-body-finder
 ![image](wbdelin.PNG)
 
 Authors _S.R.K Gasson & D.S Geldenhuys_
